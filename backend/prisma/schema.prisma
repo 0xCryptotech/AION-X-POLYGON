@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  wallet    String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  bets      Bet[]
+}
+
+model Market {
+  id            Int            @id @default(autoincrement())
+  onchainId     Int?
+  title         String
+  mode          String
+  outcomes      String
+  closeTime     DateTime
+  status        String
+  oracle        String?
+  createdAt     DateTime       @default(now())
+  bets          Bet[]
+  aiPredictions AIPrediction[]
+}
+
+model Bet {
+  id        Int      @id @default(autoincrement())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+  market    Market   @relation(fields: [marketId], references: [id])
+  marketId  Int
+  outcome   Int
+  amount    Float
+  createdAt DateTime @default(now())
+}
+
+model AIPrediction {
+  id         Int      @id @default(autoincrement())
+  aiId       String
+  market     Market   @relation(fields: [marketId], references: [id])
+  marketId   Int
+  prediction String
+  confidence Float
+  rationale  String?
+  ts         DateTime @default(now())
+}
