@@ -99,8 +99,6 @@ function FullscreenBattleModal({ onClose }) {
       if (wsRef.current) {
         try { wsRef.current.close(); } catch (e) {}
       }
-      // Use Pyth Network for price feeds
-      import { subscribeToPythPrice } from '../utils/pythPrice';
       
       const unsubscribe = subscribeToPythPrice(symbol, (priceData) => {
         try {
