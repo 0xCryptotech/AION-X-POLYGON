@@ -99,9 +99,10 @@ function FullscreenBattleModal({ onClose }) {
       if (wsRef.current) {
         try { wsRef.current.close(); } catch (e) {}
       }
-      wsRef.current = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
-
-      wsRef.current.onmessage = (evt) => {
+      // Use Pyth Network for price feeds
+      import { subscribeToPythPrice } from '../utils/pythPrice';
+      
+      const unsubscribe = subscribeToPythPrice(symbol, (priceData) => {
         try {
           const d = JSON.parse(evt.data);
           if (d && d.p) {

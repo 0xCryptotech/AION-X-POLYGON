@@ -18,14 +18,17 @@ const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
 
 // Store battle start prices
+const { getPythPrice } = require('./pythPriceService');
+
 const battlePrices = new Map();
 
-async function getBinancePrice(symbol) {
+async function getPrice(symbol) {
   try {
-    const response = await axios.get(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-    return parseFloat(response.data.price);
+    // Use Pyth Network for price feeds
+    const price = await getPythPrice(symbol);
+    return price;
   } catch (error) {
-    console.error('Binance API error:', error.message);
+    console.error('Price fetch error:', error.message);
     return null;
   }
 }
@@ -52,7 +55,7 @@ async function checkAndResolveMarkets() {
         console.log(`Market ${i} closed`);
         
         // Get price and determine outcome
-        const currentPrice = await getBinancePrice('BTCUSDT');
+        const currentPrice = await getPrice('BTCUSDT');
         const startPrice = battlePrices.get(i) || currentPrice;
         
         const outcome = currentPrice > startPrice ? 0 : 1; // 0=Bullish, 1=Bearish
@@ -78,9 +81,9 @@ async function trackNewMarkets() {
     const marketCount = await contract.marketCount();
     for (let i = 1; i <= marketCount; i++) {
       if (!battlePrices.has(i)) {
-        const price = await getBinancePrice('BTCUSDT');
+        const price = await getPrice('BTCUSDT');
         battlePrices.set(i, price);
-        console.log(`Tracking market ${i} start price: ${price}`);
+        console.log(`Tracking market ${i} start price: $${price} (Pyth Network)`);
       }
     }
   } catch (error) {
