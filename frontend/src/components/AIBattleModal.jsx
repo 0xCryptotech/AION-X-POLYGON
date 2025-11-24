@@ -3,6 +3,7 @@ import BattleResultModal from '@/components/BattleResultModal';
 import { useContract } from '@/hooks/useContract';
 import { useWallet } from '@/context/WalletContext';
 import { getMarket, getOpenMarkets } from '@/utils/contract';
+import { subscribeToPythPrice } from '@/utils/pythPrice';
 import {
   CardHeader,
   CardContent,
@@ -93,30 +94,17 @@ function FullscreenBattleModal({ onClose }) {
     const symbol = asset?.toLowerCase();
     if (!symbol) return;
 
-    try {
-      if (wsRef.current) {
-        try { wsRef.current.close(); } catch (e) {}
+    // Subscribe to Pyth Network price feed
+    const unsubscribe = subscribeToPythPrice(symbol, (priceData) => {
+      const p = priceData.price;
+      lastPriceRef.current = p;
+      const now = Date.now();
+      // update state at most once every 300ms
+      if (now - lastUpdateRef.current > 300) {
+        lastUpdateRef.current = now;
+        setPrice(p);
       }
-      // WebSocket for real-time price updates via Pyth Network
-      wsRef.current = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
-
-      wsRef.current.onmessage = (evt) => {
-        try {
-          const d = JSON.parse(evt.data);
-          if (d && d.p) {
-            const p = parseFloat(d.p);
-            lastPriceRef.current = p;
-            const now = Date.now();
-            // update state at most once every 300ms
-            if (now - lastUpdateRef.current > 300) {
-              lastUpdateRef.current = now;
-              setPrice(p);
-            }
-          }
-        } catch (e) {
-          // ignore parse errors
-        }
-      };
+    });
 
       wsRef.current.onerror = () => { /* ignore for demo */ };
     } catch (e) {
@@ -124,8 +112,8 @@ function FullscreenBattleModal({ onClose }) {
     }
 
     return () => {
-      try { wsRef.current?.close(); } catch (e) {}
-      wsRef.current = null;
+    return () => {
+      if (unsubscribe) unsubscribe();
     };
   }, [asset]);
 
