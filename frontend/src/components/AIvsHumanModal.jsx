@@ -226,7 +226,7 @@ function FullscreenBattleModal({ onClose }) {
                 Start: ${startPrice.toLocaleString()}
               </div>
             )}
-            <div className="text-[10px] text-slate-500 mt-1">Powered by Polygon Market Data</div>
+            <div className="text-[10px] text-slate-500 mt-1">Powered by Pyth Network</div>
           </div>
 
           <div className="col-span-1">

@@ -454,7 +454,7 @@ export const BattlePage = () => {
                       <div className={`text-4xl font-black bg-gradient-to-r ${trend === 'Bullish' ? 'from-green-400 to-emerald-400' : 'from-red-400 to-rose-400'} bg-clip-text text-transparent mb-2 transition-all duration-300`}>
                         ${livePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
-                      <div className="text-xs text-slate-500 mb-4">Powered by Polygon Market Data</div>
+                      <div className="text-xs text-slate-500 mb-4">Powered by Pyth Network</div>
                       <div className="flex items-center justify-center gap-2">
                         <div className="text-3xl">{trend === 'Bullish' ? '📈' : '📉'}</div>
                         <div className="text-center">
