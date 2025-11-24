@@ -87,10 +87,8 @@ function FullscreenBattleModal({ onClose }) {
     return () => clearInterval(interval);
   }, [asset]);
 
-  // -----------------------
-  // WebSocket price provider (Polygon public trade stream)
+  // WebSocket price provider (Pyth Network real-time data)
   // Throttle updates to avoid rapid re-renders causing perceived flicker
-  // -----------------------
   useEffect(() => {
     const symbol = asset?.toLowerCase();
     if (!symbol) return;
@@ -99,8 +97,10 @@ function FullscreenBattleModal({ onClose }) {
       if (wsRef.current) {
         try { wsRef.current.close(); } catch (e) {}
       }
-      
-      const unsubscribe = subscribeToPythPrice(symbol, (priceData) => {
+      // WebSocket for real-time price updates via Pyth Network
+      wsRef.current = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
+
+      wsRef.current.onmessage = (evt) => {
         try {
           const d = JSON.parse(evt.data);
           if (d && d.p) {
@@ -129,9 +129,7 @@ function FullscreenBattleModal({ onClose }) {
     };
   }, [asset]);
 
-  // -----------------------
   // AI prediction mock
-  // -----------------------
   useEffect(() => {
     let mounted = true;
     const fetchPred = async () => {
@@ -153,9 +151,7 @@ function FullscreenBattleModal({ onClose }) {
     return { side: v > 50 ? "Bullish" : "Bearish", conf: 40 + (v % 60) };
   }
 
-  // -----------------------
   // Battle flow
-  // -----------------------
   const chooseBet = (who) => {
     setSelectedBet(who);
     setLockedPredA(predA);
@@ -292,9 +288,7 @@ function FullscreenBattleModal({ onClose }) {
     }, 2000); // Check every 2 seconds
   };
 
-  // -----------------------
   // UI
-  // -----------------------
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/95 flex items-center justify-center p-6">
       <div className="w-full max-w-5xl bg-slate-800/80 border border-slate-700 rounded-2xl shadow-2xl p-6">
@@ -306,13 +300,13 @@ function FullscreenBattleModal({ onClose }) {
         <div className="grid grid-cols-3 gap-4 items-center">
           <div>
             <Label>CURRENT PRICE</Label>
-            <div className="text-2xl font-bold text-cyan-400">{price ? `$${price.toLocaleString()}` : "$---"}</div>
+            <div className="text-2xl font-bold text-cyan-400">{price ? `${price.toLocaleString()}` : "$---"}</div>
             {isRunning && startPrice && (
               <div className="text-xs text-slate-400 mt-1">
                 Start: ${startPrice.toLocaleString()}
               </div>
             )}
-            <div className="text-[10px] text-slate-500 mt-1">Powered by Polygon Market Data</div>
+            <div className="text-[10px] text-slate-500 mt-1">Powered by Pyth Network</div>
           </div>
 
           <div className="col-span-1">
@@ -407,8 +401,6 @@ function FullscreenBattleModal({ onClose }) {
             <div className="text-xs text-slate-400 mt-1">🎯 Win: ~1.96x stake (2% fee)</div>
           </div>
 
-
-
           <div className="text-right">
             {isRunning && countdown === 0 && battleTime > 0 && (
               <div className="mb-2 text-center">
@@ -459,8 +451,8 @@ function FullscreenBattleModal({ onClose }) {
             <div className="mt-2 max-h-40 overflow-auto text-xs">
               {history.map((h) => (
                 <div key={h.id} className="p-2 border-b border-slate-700">
-                  <div>{h.picked} — {h.outcome}</div>
-                  <div className="text-slate-400">{h.before ?? '-'} → {h.after ?? '-'} • payout {h.payout}</div>
+                  <div>{h.asset} — {h.outcome} {h.win ? '✅' : '❌'}</div>
+                  <div className="text-slate-400">Result: {h.outcome}</div>
                 </div>
               ))}
             </div>
