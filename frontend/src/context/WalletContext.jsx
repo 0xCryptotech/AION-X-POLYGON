@@ -2,8 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const WalletContext = createContext();
 
-const MATIC_CHAIN_ID = '0x61'; // BSC Testnet (for testing)
-const MATIC_MAINNET_CHAIN_ID = '0x38'; // BSC Mainnet
+const MATIC_CHAIN_ID = '0x13882'; // Polygon Amoy Testnet (for testing)
+const MATIC_MAINNET_CHAIN_ID = '0x89'; // Polygon Mainnet
 
 export const useWallet = () => {
   const context = useContext(WalletContext);
@@ -75,8 +75,8 @@ export const WalletProvider = ({ children }) => {
                   symbol: 'tBNB',
                   decimals: 18,
                 },
-                rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
-                blockExplorerUrls: ['https://testnet.bscscan.com/'],
+                rpcUrls: ['https://rpc-amoy.polygon.technology/'],
+                blockExplorerUrls: ['https://amoy.polygonscan.com/'],
               },
             ],
           });
