@@ -1,5 +1,4 @@
 // Pyth Network Price Feed Integration for Frontend
-import { EvmPriceServiceConnection } from '@pythnetwork/pyth-evm-js';
 
 // Pyth Price Service endpoint
 const PYTH_PRICE_SERVICE = 'https://hermes.pyth.network';
@@ -17,13 +16,6 @@ export const PYTH_PRICE_FEEDS = {
   'dotusdt': '0xca3eed9b267293f6595901c734c7525ce8ef49adafe8284606ceb307afa2ca5b', // DOT/USD
   'linkusdt': '0x8ac0c70fff57e9aefdf5edf44b51d62c2d433653cbb2cf5cc06bb115af04d221', // LINK/USD
 };
-
-/**
- * Create Pyth price service connection
- */
-export function createPythConnection() {
-  return new EvmPriceServiceConnection(PYTH_PRICE_SERVICE);
-}
 
 /**
  * Get latest price from Pyth Network

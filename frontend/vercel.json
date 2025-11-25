@@ -1,4 +1,5 @@
 {
+  "name": "aion-x-polygon",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",

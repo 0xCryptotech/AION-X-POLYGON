@@ -106,12 +106,6 @@ function FullscreenBattleModal({ onClose }) {
       }
     });
 
-      wsRef.current.onerror = () => { /* ignore for demo */ };
-    } catch (e) {
-      // ignore
-    }
-
-    return () => {
     return () => {
       if (unsubscribe) unsubscribe();
     };

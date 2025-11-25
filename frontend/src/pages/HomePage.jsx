@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Filter, Trophy } from 'lucide-react';
 import { Hero } from '@/components/Hero';
 import { MarketCard } from '@/components/MarketCard';
 import { MarketModal } from '@/components/MarketModal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+const BACKEND = 'http://localhost:4000';
 import { mockMarkets } from '@/data/mockData';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -13,11 +15,29 @@ export const HomePage = () => {
   const navigate = useNavigate();
   const [selectedMarket, setSelectedMarket] = useState(null);
   const [filterMode, setFilterMode] = useState('ALL');
+  const [markets, setMarkets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMarkets();
+  }, []);
+
+  async function fetchMarkets() {
+    try {
+      const res = await axios.get(`${BACKEND}/api/markets`);
+      setMarkets(res.data.length > 0 ? res.data : mockMarkets);
+    } catch (error) {
+      console.error('Error fetching markets:', error);
+      setMarkets(mockMarkets);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const filteredMarkets =
     filterMode === 'ALL'
-      ? mockMarkets
-      : mockMarkets.filter((market) => market.mode === filterMode);
+      ? markets
+      : markets.filter((market) => market.mode === filterMode);
 
   return (
     <div className="min-h-screen">
