@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
-const STAKING_ADDRESS = import.meta.env.VITE_STAKING_ADDRESS || '';
-const AION_TOKEN_ADDRESS = import.meta.env.VITE_TOKEN_ADDRESS || '';
+const STAKING_ADDRESS = process.env.REACT_APP_STAKING_ADDRESS || '';
+const AION_TOKEN_ADDRESS = process.env.REACT_APP_TOKEN_ADDRESS || '';
 
 const STAKING_ABI = [
   "function stake(uint256 amount) external",
