@@ -120,7 +120,7 @@ export const getBattleHistory = async (userAddress) => {
     const history = [];
     
     // Only check recent 100 markets for performance
-    const startMarket = Math.max(1, marketCount.toNumber() - 100);
+    const startMarket = Math.max(1, marketCount.toNumber() - 20);
 
     for (let marketId = startMarket; marketId <= marketCount.toNumber(); marketId++) {
       const betsCount = await contract.getMarketBetsCount(marketId);
@@ -161,7 +161,7 @@ export const getOpenMarkets = async () => {
     const now = Math.floor(Date.now() / 1000);
     
     // Check last 100 markets for performance
-    const startMarket = Math.max(1, marketCount.toNumber() - 100);
+    const startMarket = Math.max(1, marketCount.toNumber() - 20);
     
     for (let i = startMarket; i <= marketCount.toNumber(); i++) {
       const market = await contract.markets(i);
