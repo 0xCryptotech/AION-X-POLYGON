@@ -7,7 +7,7 @@ import { ethers } from 'ethers';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
-const FAUCET_ADDRESS = import.meta.env.VITE_FAUCET_ADDRESS || '';
+const FAUCET_ADDRESS = process.env.REACT_APP_FAUCET_ADDRESS || '';
 const FAUCET_ABI = [
   "function claim() external",
   "function lastClaimTime(address) view returns (uint256)",
@@ -59,7 +59,7 @@ export const FaucetPage = () => {
           params: {
             type: 'ERC20',
             options: {
-              address: import.meta.env.VITE_TOKEN_ADDRESS || '',
+              address: process.env.REACT_APP_TOKEN_ADDRESS || '',
               symbol: 'AION',
               decimals: 18,
             },
@@ -181,7 +181,7 @@ export const FaucetPage = () => {
                         params: {
                           type: 'ERC20',
                           options: {
-                            address: import.meta.env.VITE_TOKEN_ADDRESS || '',
+                            address: process.env.REACT_APP_TOKEN_ADDRESS || '',
                             symbol: 'AION',
                             decimals: 18,
                             image: 'https://via.placeholder.com/64',

@@ -2,8 +2,8 @@ import { ethers } from 'ethers';
 import PredictionMarketABI from '../../abi/PredictionMarket.json';
 import AIONTokenABI from '../../abi/AIONToken.json';
 
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '';
-const AION_TOKEN_ADDRESS = import.meta.env.VITE_TOKEN_ADDRESS || '';
+const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || '';
+const AION_TOKEN_ADDRESS = process.env.REACT_APP_TOKEN_ADDRESS || '';
 
 export const getContract = (signer) => {
   return new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, signer);
