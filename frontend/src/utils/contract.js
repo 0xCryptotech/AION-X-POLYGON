@@ -156,28 +156,15 @@ export const getBattleHistory = async (userAddress) => {
 
 export const getOpenMarkets = async () => {
   try {
-    const provider = getProvider();
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, provider);
-    const marketCount = await contract.marketCount();
-    const openMarkets = [];
+    // Fetch from backend API (faster than blockchain loop)
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://api.aion-x.xyz';
+    const response = await fetch(`${backendUrl}/api/blockchain/markets`);
+    const markets = await response.json();
+    
+    // Filter only OPEN markets
     const now = Math.floor(Date.now() / 1000);
+    const openMarkets = markets.filter(m => m.status === 0 && m.closeTime > now);
     
-    // Check last 100 markets for performance
-    const startMarket = Math.max(1, marketCount.toNumber() - 10);
-    
-    for (let i = startMarket; i <= marketCount.toNumber(); i++) {
-      const market = await contract.markets(i);
-      // Status 0 = OPEN, closeTime > now
-      if (market.status === 0 && market.closeTime.toNumber() > now) {
-        openMarkets.push({
-          id: i,
-          title: market.title,
-          closeTime: market.closeTime.toNumber(),
-          mode: market.mode,
-          totalStaked: ethers.utils.formatEther(market.totalStaked)
-        });
-      }
-    }
     return openMarkets;
   } catch (error) {
     console.error('Get open markets error:', error);
