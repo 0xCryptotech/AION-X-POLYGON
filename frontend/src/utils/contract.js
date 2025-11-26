@@ -13,7 +13,9 @@ export const getProvider = () => {
   if (window.ethereum) {
     return new ethers.providers.Web3Provider(window.ethereum);
   }
-  return null;
+  // Fallback to Alchemy RPC
+  const rpcUrl = import.meta.env.VITE_RPC_URL || 'https://polygon-amoy.g.alchemy.com/v2/TnBudoktgrSgm-wy0RkEg';
+  return new ethers.providers.JsonRpcProvider(rpcUrl);
 };
 
 export const getSigner = async () => {
