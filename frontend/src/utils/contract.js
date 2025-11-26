@@ -158,7 +158,7 @@ export const getOpenMarkets = async () => {
   try {
     // Fetch from backend API (faster than blockchain loop)
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://api.aion-x.xyz';
-    const response = await fetch(`${backendUrl}/api/blockchain/markets`);
+    const response = await fetch(`${backendUrl}/api/markets/quick`);
     const markets = await response.json();
     
     // Filter only OPEN markets
