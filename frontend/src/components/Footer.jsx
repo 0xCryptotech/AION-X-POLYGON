@@ -12,7 +12,7 @@ export const Footer = () => {
     resources: [
       { name: 'Documentation', path: '#' },
       { name: 'Smart Contract', path: '#' },
-      { name: 'BNB Testnet', path: 'https://testnet.bscscan.com/' },
+      { name: 'Polygon Amoy', path: 'https://amoy.polygonscan.com/' },
       { name: 'Support', path: '#' },
     ],
     social: [
