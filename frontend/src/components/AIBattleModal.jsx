@@ -81,9 +81,21 @@ function FullscreenBattleModal({ onClose }) {
       console.log('[AIBattle] Fetching markets...');
       const markets = await getOpenMarkets();
       console.log('[AIBattle] Received markets:', markets);
-      setOpenMarkets(markets);
-      const assetMarket = markets.find(m => m.title.includes(asset.replace('USDT', '')));
-      if (assetMarket) setSelectedMarket(assetMarket);
+      
+      // Fallback to mock if empty
+      if (markets.length === 0) {
+        const mockMarkets = [
+          { id: 201, title: 'BTC/USD 10min', mode: 0, closeTime: Math.floor(Date.now()/1000) + 600, status: 0, totalStaked: '0' },
+          { id: 202, title: 'ETH/USD 10min', mode: 0, closeTime: Math.floor(Date.now()/1000) + 600, status: 0, totalStaked: '0' },
+        ];
+        console.log('[AIBattle] Using mock markets');
+        setOpenMarkets(mockMarkets);
+        setSelectedMarket(mockMarkets[0]);
+      } else {
+        setOpenMarkets(markets);
+        const assetMarket = markets.find(m => m.title.includes(asset.replace('USDT', '')));
+        if (assetMarket) setSelectedMarket(assetMarket);
+      }
     };
     fetchMarkets();
     const interval = setInterval(fetchMarkets, 30000);
