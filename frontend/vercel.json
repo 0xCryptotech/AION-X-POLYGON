@@ -2,8 +2,7 @@
   "name": "aion-x-polygon",
   "installCommand": "npm install --legacy-peer-deps",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
+  "outputDirectory": "build",
   "rewrites": [
     {
       "source": "/(.*)",
