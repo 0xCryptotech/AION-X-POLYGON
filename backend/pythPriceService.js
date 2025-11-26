@@ -123,28 +123,26 @@ async function getPythPriceAtTime(symbol, timestamp) {
  * @returns {Promise<Object>} - Object with symbol: price pairs
  */
 async function getMultiplePythPrices(symbols) {
-  const priceIds = symbols
-    .map(symbol => PRICE_FEED_IDS[symbol])
-    .filter(id => id !== undefined);
-
-  if (priceIds.length === 0) {
-    return {};
-  }
-
   try {
-    const response = await axios.get(`${PYTH_HERMES_URL}/api/latest_price_feeds`, {
-      params: {
-        ids: priceIds,
-      },
-      timeout: 5000,
+    // Fetch all prices in parallel
+    const pricePromises = symbols.map(async (symbol) => {
+      try {
+        const price = await getPythPrice(symbol);
+        return { symbol, price };
+      } catch (error) {
+        console.error(`Failed to fetch ${symbol}:`, error.message);
+        return { symbol, price: null };
+      }
     });
 
+    const results = await Promise.all(pricePromises);
+    
+    // Convert to object and filter out null prices
     const prices = {};
-    response.data.forEach((priceData, index) => {
-      const symbol = symbols[index];
-      const price = priceData.price.price;
-      const expo = priceData.price.expo;
-      prices[symbol] = price * Math.pow(10, expo);
+    results.forEach(({ symbol, price }) => {
+      if (price !== null) {
+        prices[symbol] = price;
+      }
     });
 
     return prices;
