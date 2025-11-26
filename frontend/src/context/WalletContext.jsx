@@ -2,8 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const WalletContext = createContext();
 
-const MATIC_CHAIN_ID = '0x13882'; // Polygon Amoy Testnet (for testing)
-const MATIC_MAINNET_CHAIN_ID = '0x89'; // Polygon Mainnet
+const POLYGON_AMOY_CHAIN_ID = '0x13882'; // Polygon Amoy Testnet (80002 in hex)
+const POLYGON_MAINNET_CHAIN_ID = '0x89'; // Polygon Mainnet
 
 export const useWallet = () => {
   const context = useContext(WalletContext);
@@ -55,11 +55,11 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
-  const switchToBNBChain = async () => {
+  const switchToPolygonChain = async () => {
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: MATIC_CHAIN_ID }],
+        params: [{ chainId: POLYGON_AMOY_CHAIN_ID }],
       });
     } catch (switchError) {
       if (switchError.code === 4902) {
@@ -68,11 +68,11 @@ export const WalletProvider = ({ children }) => {
             method: 'wallet_addEthereumChain',
             params: [
               {
-                chainId: MATIC_CHAIN_ID,
-                chainName: 'Polygon Testnet',
+                chainId: POLYGON_AMOY_CHAIN_ID,
+                chainName: 'Polygon Amoy Testnet',
                 nativeCurrency: {
-                  name: 'tBNB',
-                  symbol: 'tBNB',
+                  name: 'MATIC',
+                  symbol: 'MATIC',
                   decimals: 18,
                 },
                 rpcUrls: ['https://rpc-amoy.polygon.technology/'],
@@ -99,8 +99,8 @@ export const WalletProvider = ({ children }) => {
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const chain = await window.ethereum.request({ method: 'eth_chainId' });
       
-      if (chain !== MATIC_CHAIN_ID) {
-        await switchToBNBChain();
+      if (chain !== POLYGON_AMOY_CHAIN_ID) {
+        await switchToPolygonChain();
       }
 
       setAddress(accounts[0]);
@@ -170,7 +170,7 @@ export const WalletProvider = ({ children }) => {
         connectMetaMask,
         connectZedpay,
         disconnectWallet,
-        switchToBNBChain,
+        switchToPolygonChain,
       }}
     >
       {children}

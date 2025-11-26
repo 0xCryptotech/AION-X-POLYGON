@@ -113,7 +113,7 @@ export const LeaderboardPage = () => {
                       <div className="text-right">
                         <div className="flex items-center justify-end space-x-1.5">
                           <TrendingUp className="h-4 w-4 text-accent" />
-                          <span className="font-mono font-bold text-accent">{formatBNB(entry.totalEarnings)} MATIC</span>
+                          <span className="font-mono font-bold text-accent">{formatBNB(entry.totalEarnings)} AION</span>
                         </div>
                       </div>
                     </div>

@@ -1,3 +1,30 @@
+import { getPythPrice } from '@/utils/pythPrice';
+
+// Extract symbol from title
+const extractSymbol = (title) => {
+  if (title.includes('BTC')) return 'BTCUSDT';
+  if (title.includes('ETH')) return 'ETHUSDT';
+  if (title.includes('SOL')) return 'SOLUSDT';
+  if (title.includes('BNB')) return 'BNBUSDT';
+  if (title.includes('XRP')) return 'XRPUSDT';
+  return null;
+};
+
+// Enrich markets with live price
+export const enrichMarketsWithPrice = async (markets) => {
+  const enriched = await Promise.all(
+    markets.map(async (market) => {
+      const symbol = extractSymbol(market.title);
+      if (symbol) {
+        const priceData = await getPythPrice(symbol);
+        return { ...market, livePrice: priceData?.price, symbol };
+      }
+      return market;
+    })
+  );
+  return enriched;
+};
+
 // Mock market data - Enhanced demo
 export const mockMarkets = [
   {
@@ -38,7 +65,7 @@ export const mockMarkets = [
   },
   {
     id: 4,
-    title: '💎 MATIC/USD: Polygon Coin trend prediction',
+    title: '💎 BNB/USD: Binance Coin trend prediction',
     mode: 'HUMAN_VS_HUMAN',
     closeTime: Date.now() + 1000 * 60 * 10,
     status: 'OPEN',
@@ -121,6 +148,11 @@ export const mockMarkets = [
     participants: 34,
   },
 ];
+
+// Get markets with live prices
+export const getMarketsWithLivePrice = async () => {
+  return await enrichMarketsWithPrice(mockMarkets);
+};
 
 // Mock leaderboard data - Enhanced demo
 export const mockLeaderboard = [

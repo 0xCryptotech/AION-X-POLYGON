@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Background colors - Deep dark with subtle blue tint */
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    
+    /* Card & elevated surfaces with glassmorphism */
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+    
+    /* Popover & dropdown surfaces */
+    --popover: 222 47% 7%;
+    --popover-foreground: 210 40% 98%;
+    
+    /* Primary - Electric Blue */
+    --primary: 210 100% 60%;
+    --primary-foreground: 222 47% 4%;
+    --primary-glow: 210 100% 70%;
+    
+    /* Secondary - Cyan/Teal */
+    --secondary: 186 100% 50%;
+    --secondary-foreground: 222 47% 4%;
+    --secondary-glow: 186 100% 65%;
+    
+    /* Accent - Amber/Gold */
+    --accent: 45 100% 51%;
+    --accent-foreground: 222 47% 8%;
+    --accent-glow: 45 100% 65%;
+    
+    /* Muted elements */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    /* Destructive/Error */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    
+    /* Success */
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    
+    /* Borders */
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 210 100% 60%;
+    
+    /* Chart colors */
+    --chart-1: 210 100% 60%;
+    --chart-2: 186 100% 50%;
+    --chart-3: 45 100% 51%;
+    --chart-4: 280 100% 70%;
+    --chart-5: 340 82% 52%;
+    
+    --radius: 0.75rem;
+    
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(210 100% 60%) 0%, hsl(186 100% 50%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(186 100% 50%) 0%, hsl(45 100% 51%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(222 47% 4%) 0%, hsl(222 47% 8%) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(210 100% 60% / 0.15) 0%, transparent 50%);
+    
+    /* Shadows with glow effects */
+    --shadow-sm: 0 1px 2px 0 hsl(222 47% 4% / 0.5);
+    --shadow-md: 0 4px 6px -1px hsl(222 47% 4% / 0.5), 0 2px 4px -1px hsl(222 47% 4% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(222 47% 4% / 0.5), 0 4px 6px -2px hsl(222 47% 4% / 0.3);
+    --shadow-glow-primary: 0 0 30px hsl(210 100% 60% / 0.3), 0 0 60px hsl(210 100% 60% / 0.15);
+    --shadow-glow-secondary: 0 0 30px hsl(186 100% 50% / 0.3), 0 0 60px hsl(186 100% 50% / 0.15);
+    --shadow-glow-accent: 0 0 30px hsl(45 100% 51% / 0.3), 0 0 60px hsl(45 100% 51% / 0.15);
+    
+    /* Animations */
+    --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Mono font for numbers and code */
+  .font-mono {
+    font-family: 'Azeret Mono', 'Courier New', monospace;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
+
+@layer utilities {
+  /* Glass effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .glass-hover:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Gradient text */
+  .gradient-text-primary {
+    background: linear-gradient(135deg, hsl(210 100% 60%), hsl(186 100% 50%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .gradient-text-accent {
+    background: linear-gradient(135deg, hsl(186 100% 50%), hsl(45 100% 51%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: 0 0 30px hsl(210 100% 60% / 0.3), 0 0 60px hsl(210 100% 60% / 0.15);
+  }
+  
+  .glow-secondary {
+    box-shadow: 0 0 30px hsl(186 100% 50% / 0.3), 0 0 60px hsl(186 100% 50% / 0.15);
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 30px hsl(45 100% 51% / 0.3), 0 0 60px hsl(45 100% 51% / 0.15);
+  }
+  
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Animated gradient background */
+  .animated-gradient {
+    background: linear-gradient(
+      -45deg,
+      hsl(222 47% 4%),
+      hsl(222 47% 6%),
+      hsl(222 47% 5%),
+      hsl(222 47% 7%)
+    );
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+  }
+  
+  @keyframes gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
+  /* Pulse animation for active states */
+  .pulse-glow {
+    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+}
+
+/* Remove default App.css styles */
+.App {
+  min-height: 100vh;
+}
+
+.App-header {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+}
+
+.App-link {
+  color: hsl(var(--primary));
+}

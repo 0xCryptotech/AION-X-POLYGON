@@ -33,7 +33,7 @@ export const MarketModal = ({ market, open, onClose }) => {
     }
 
     // Mock bet placement
-    toast.success(`Bet placed! ${betAmount} MATIC on "${market.outcomes[selectedOutcome].name}"`);
+    toast.success(`Bet placed! ${betAmount} AION on "${market.outcomes[selectedOutcome].name}"`);
     setBetAmount('');
     setSelectedOutcome(null);
     onClose();
@@ -100,7 +100,7 @@ export const MarketModal = ({ market, open, onClose }) => {
                 <TrendingUp className="h-4 w-4" />
                 <span className="text-sm">Total Pool</span>
               </div>
-              <div className="font-mono text-2xl font-bold text-accent">{formatBNB(totalPool)} MATIC</div>
+              <div className="font-mono text-2xl font-bold text-accent">{formatBNB(totalPool)} AION</div>
             </div>
             <div className="glass p-4 rounded-lg">
               <div className="flex items-center space-x-2 text-muted-foreground mb-2">
@@ -143,7 +143,7 @@ export const MarketModal = ({ market, open, onClose }) => {
                       </div>
                       <Progress value={parseFloat(odds)} className="h-2" />
                       <div className="mt-2 text-sm text-muted-foreground">
-                        Pool: <span className="font-mono text-accent">{formatBNB(outcome.pool)} MATIC</span>
+                        Pool: <span className="font-mono text-accent">{formatBNB(outcome.pool)} AION</span>
                       </div>
                     </button>
                   );
@@ -171,7 +171,7 @@ export const MarketModal = ({ market, open, onClose }) => {
                       onClick={() => setBetAmount(amount)}
                       className="glass"
                     >
-                      {amount} MATIC
+                      {amount} AION
                     </Button>
                   ))}
                 </div>
@@ -183,7 +183,7 @@ export const MarketModal = ({ market, open, onClose }) => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Potential Return</span>
                     <span className="font-mono text-xl font-bold text-accent">
-                      ~{formatBNB((parseFloat(betAmount) * totalPool) / market.outcomes[selectedOutcome].pool)} MATIC
+                      ~{formatBNB((parseFloat(betAmount) * totalPool) / market.outcomes[selectedOutcome].pool)} AION
                     </span>
                   </div>
                 </div>

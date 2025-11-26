@@ -9,7 +9,6 @@ import { Swords, Bot, User, Trophy, TrendingUp, TrendingDown, Plus } from 'lucid
 import AIBattleModal from '@/components/AIBattleModal';
 import AIvsHumanModal from '@/components/AIvsHumanModal';
 import HumanvsHumanModal from '@/components/HumanvsHumanModal';
-import { subscribeToPythPrice } from '@/utils/pythPrice';
 
 const TIMEFRAMES = ["M1", "M5", "M10", "M15", "M30", "H1"];
 const AI_MODELS = ["GPT-5 Oracle", "Claude-3", "DeepMind-FX", "Bloom-Alpha"];
@@ -45,7 +44,7 @@ export const BattlePage = () => {
       participant1: { name: 'AI Alpha', type: 'ai', prediction: 'UP', confidence: 85, model: 'GPT-5-Trader' },
       participant2: { name: 'AI Beta', type: 'ai', prediction: 'DOWN', confidence: 72, model: 'DeepMind-FX' },
       status: 'active',
-      pool: '5.2 MATIC',
+      pool: '5.2 AION',
       endTime: '2h 30m'
     },
 
@@ -61,7 +60,7 @@ export const BattlePage = () => {
       participant1: { name: 'AI Gamma', type: 'ai', prediction: 'UP', confidence: 78, model: 'Bloom-Alpha' },
       participant2: { name: 'AI Delta', type: 'ai', prediction: 'DOWN', confidence: 82, model: 'Custom Model' },
       status: 'active',
-      pool: '3.8 MATIC',
+      pool: '3.8 AION',
       endTime: '5h 15m'
     },
     {
@@ -75,7 +74,7 @@ export const BattlePage = () => {
       participant1: { name: 'AI Alpha', type: 'ai', prediction: 'UP', confidence: 68, model: 'GPT-5-Trader' },
       participant2: { name: 'AI Gamma', type: 'ai', prediction: 'DOWN', confidence: 75, model: 'Bloom-Alpha' },
       status: 'active',
-      pool: '2.5 MATIC',
+      pool: '2.5 AION',
       endTime: '3h 10m'
     },
     {
@@ -89,7 +88,7 @@ export const BattlePage = () => {
       participant1: { name: 'AI Beta', type: 'ai', prediction: 'UP', confidence: 80, model: 'DeepMind-FX' },
       participant2: { name: 'CryptoKing', type: 'human', prediction: 'DOWN', confidence: 90 },
       status: 'active',
-      pool: '4.2 MATIC',
+      pool: '4.2 AION',
       endTime: '1h 45m'
     },
     {
@@ -103,7 +102,7 @@ export const BattlePage = () => {
       participant1: { name: 'AI Delta', type: 'ai', prediction: 'DOWN', confidence: 73, model: 'Custom Model' },
       participant2: { name: 'ProTrader', type: 'human', prediction: 'UP', confidence: 85 },
       status: 'active',
-      pool: '3.1 MATIC',
+      pool: '3.1 AION',
       endTime: '4h 20m'
     },
     {
@@ -117,7 +116,7 @@ export const BattlePage = () => {
       participant1: { name: 'Trader1', type: 'human', prediction: 'UP', confidence: 65 },
       participant2: { name: 'Trader2', type: 'human', prediction: 'DOWN', confidence: 80 },
       status: 'active',
-      pool: '2.1 MATIC',
+      pool: '2.1 AION',
       endTime: '1h 45m'
     },
     {
@@ -131,7 +130,7 @@ export const BattlePage = () => {
       participant1: { name: 'WhaleTrader', type: 'human', prediction: 'DOWN', confidence: 92 },
       participant2: { name: 'BullRunner', type: 'human', prediction: 'UP', confidence: 88 },
       status: 'active',
-      pool: '6.5 MATIC',
+      pool: '6.5 AION',
       endTime: '2h 10m'
     }
   ];
@@ -159,8 +158,7 @@ export const BattlePage = () => {
   const [selectedAIModel, setSelectedAIModel] = useState('GPT-4 Oracle');
   const [selectedCategory, setSelectedCategory] = useState('Crypto');
   const [selectedAsset, setSelectedAsset] = useState('BTCUSDT');
-  const [livePrice, setLivePrice] = useState(null);
-  const [prevPrice, setPrevPrice] = useState(null);
+  const [livePrice, setLivePrice] = useState(111297.01);
   const [confidence, setConfidence] = useState(97.8);
   const [trend, setTrend] = useState('Bullish');
   const [timeframePredictions, setTimeframePredictions] = useState([
@@ -170,7 +168,6 @@ export const BattlePage = () => {
     { tf: 'M15', change: -0.8, trend: 'down' },
     { tf: 'M30', change: 1.4, trend: 'up' }
   ]);
-  const priceUnsubscribeRef = useRef(null);
   
   const aiModels = ['GPT-4 Oracle', 'Claude-3 Opus', 'DeepMind-FX', 'Bloom-Alpha'];
   const categories = ['Crypto', 'Market', 'Esport'];
@@ -180,40 +177,17 @@ export const BattlePage = () => {
     'Esport': ['DOTA2', 'LOL', 'CSGO', 'VALORANT']
   };
   
-  // Real Pyth Network price subscription
-  useEffect(() => {
-    const symbol = selectedAsset.toLowerCase();
-    
-    if (priceUnsubscribeRef.current) {
-      priceUnsubscribeRef.current();
-    }
-    
-    priceUnsubscribeRef.current = subscribeToPythPrice(symbol, (priceData) => {
-      setPrevPrice(livePrice);
-      setLivePrice(priceData.price);
-      
-      // Update trend based on price movement
-      if (livePrice && priceData.price > livePrice) {
-        setTrend('Bullish');
-      } else if (livePrice && priceData.price < livePrice) {
-        setTrend('Bearish');
-      }
-    });
-    
-    return () => {
-      if (priceUnsubscribeRef.current) {
-        priceUnsubscribeRef.current();
-      }
-    };
-  }, [selectedAsset]);
-  
-  // Mock confidence and timeframe predictions (keep these as mock)
   useEffect(() => {
     const interval = setInterval(() => {
+      setLivePrice(prev => {
+        const change = (Math.random() - 0.5) * 100;
+        return +(prev + change).toFixed(2);
+      });
       setConfidence(prev => {
         const change = (Math.random() - 0.5) * 2;
         return Math.min(99.9, Math.max(85, +(prev + change).toFixed(1)));
       });
+      setTrend(Math.random() > 0.3 ? 'Bullish' : 'Bearish');
       setTimeframePredictions(prev => prev.map(tf => ({
         ...tf,
         change: +((Math.random() - 0.5) * 2).toFixed(1),
@@ -478,9 +452,9 @@ export const BattlePage = () => {
                       <div className="text-sm text-slate-400 mb-2">₿ Bitcoin</div>
                       <div className={`text-xs ${trend === 'Bullish' ? 'text-green-400' : 'text-red-400'} mb-3`}>{selectedAIModel} • {confidence}%</div>
                       <div className={`text-4xl font-black bg-gradient-to-r ${trend === 'Bullish' ? 'from-green-400 to-emerald-400' : 'from-red-400 to-rose-400'} bg-clip-text text-transparent mb-2 transition-all duration-300`}>
-                        {livePrice ? `$${livePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Loading...'}
+                        ${livePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
-                      <div className="text-xs text-slate-500 mb-4">Powered by Pyth Network</div>
+                      <div className="text-xs text-slate-500 mb-4">Powered by Binance Market Data</div>
                       <div className="flex items-center justify-center gap-2">
                         <div className="text-3xl">{trend === 'Bullish' ? '📈' : '📉'}</div>
                         <div className="text-center">

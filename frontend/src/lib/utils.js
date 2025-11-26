@@ -5,13 +5,13 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// Format MATIC values
-export function formatBNB(value) {
+// Format token values
+export function formatToken(value) {
   return parseFloat(value).toFixed(4);
 }
 
-// Alias for backward compatibility
-export const formatMATIC = formatBNB;
+// Alias untuk backward compatibility
+export const formatBNB = formatToken;
 
 // Format percentage
 export function formatPercentage(value) {

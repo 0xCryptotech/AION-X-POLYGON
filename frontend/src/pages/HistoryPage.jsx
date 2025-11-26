@@ -34,14 +34,14 @@ export const HistoryPage = () => {
     },
     {
       label: 'Total Won',
-      value: `${stats.totalWon.toFixed(4)} MATIC`,
+      value: `${stats.totalWon.toFixed(4)} AION`,
       icon: TrendingUp,
       color: 'text-green-400',
       bg: 'bg-green-500/10',
     },
     {
       label: 'Profit/Loss',
-      value: `${stats.profitLoss >= 0 ? '+' : ''}${stats.profitLoss.toFixed(4)} MATIC`,
+      value: `${stats.profitLoss >= 0 ? '+' : ''}${stats.profitLoss.toFixed(4)} AION`,
       icon: stats.profitLoss >= 0 ? TrendingUp : TrendingDown,
       color: stats.profitLoss >= 0 ? 'text-green-400' : 'text-red-400',
       bg: stats.profitLoss >= 0 ? 'bg-green-500/10' : 'bg-red-500/10',
@@ -184,10 +184,10 @@ export const HistoryPage = () => {
                           <div className={`text-lg font-bold ${
                             battle.result === 'win' ? 'text-green-400' : battle.result === 'loss' ? 'text-red-400' : 'text-slate-400'
                           }`}>
-                            {battle.result === 'win' ? `+${battle.payout?.toFixed(4)}` : battle.result === 'loss' ? `-${battle.stake?.toFixed(4)}` : '0.0000'} MATIC
+                            {battle.result === 'win' ? `+${battle.payout?.toFixed(4)}` : battle.result === 'loss' ? `-${battle.stake?.toFixed(4)}` : '0.0000'} AION
                           </div>
                           <div className="text-xs text-slate-400">
-                            Stake: {battle.stake?.toFixed(4)} MATIC
+                            Stake: {battle.stake?.toFixed(4)} AION
                           </div>
                         </div>
                       </div>

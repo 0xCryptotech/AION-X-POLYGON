@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Filter, Trophy } from 'lucide-react';
 import { Hero } from '@/components/Hero';
 import { MarketCard } from '@/components/MarketCard';
 import { MarketModal } from '@/components/MarketModal';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-const BACKEND = 'http://localhost:4000';
-import { mockMarkets } from '@/data/mockData';
+import { mockMarkets, enrichMarketsWithPrice } from '@/data/mockData';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -15,24 +13,17 @@ export const HomePage = () => {
   const navigate = useNavigate();
   const [selectedMarket, setSelectedMarket] = useState(null);
   const [filterMode, setFilterMode] = useState('ALL');
-  const [markets, setMarkets] = useState([]);
+  const [markets, setMarkets] = useState(mockMarkets);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchMarkets();
-  }, []);
-
-  async function fetchMarkets() {
-    try {
-      const res = await axios.get(`${BACKEND}/api/markets`);
-      setMarkets(res.data.length > 0 ? res.data : mockMarkets);
-    } catch (error) {
-      console.error('Error fetching markets:', error);
-      setMarkets(mockMarkets);
-    } finally {
+    const loadMarkets = async () => {
+      const enriched = await enrichMarketsWithPrice(mockMarkets);
+      setMarkets(enriched);
       setLoading(false);
-    }
-  }
+    };
+    loadMarkets();
+  }, []);
 
   const filteredMarkets =
     filterMode === 'ALL'

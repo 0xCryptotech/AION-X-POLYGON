@@ -33,6 +33,7 @@ const webpackConfig = {
   webpack: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '@abi': path.resolve(__dirname, 'abi'),
     },
     configure: (webpackConfig) => {
 

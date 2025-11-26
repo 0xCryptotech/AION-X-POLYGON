@@ -35,7 +35,7 @@ export const AboutPage = () => {
     {
       icon: Zap,
       title: 'Connect Wallet',
-      description: 'Connect your MetaMask or any Web3 wallet to get started with MATIC.',
+      description: 'Connect your MetaMask or any Web3 wallet to get started with AION.',
     },
     {
       icon: TrendingUp,
@@ -58,7 +58,7 @@ export const AboutPage = () => {
     {
       icon: Shield,
       title: 'Secure & Transparent',
-      description: 'All bets are recorded on the Polygon with full transparency.',
+      description: 'All bets are recorded on the AION Smart Chain with full transparency.',
     },
     {
       icon: Zap,
@@ -196,7 +196,7 @@ export const AboutPage = () => {
                   </Badge>
                 </h4>
                 <p className="text-muted-foreground">
-                  AION-X runs on the Polygon Testnet (Chain ID: 80002) for fast, low-cost transactions.
+                  AION-X runs on the AION Smart Chain Testnet (Chain ID: 97) for fast, low-cost transactions.
                 </p>
               </div>
 

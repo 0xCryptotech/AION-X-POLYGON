@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { formatTimeRemaining, formatBNB, calculateOdds } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { LivePrice } from '@/components/LivePrice';
 
 export const MarketCard = ({ market, onClick }) => {
   const getModeIcon = (mode) => {
@@ -78,6 +79,12 @@ export const MarketCard = ({ market, onClick }) => {
           <h3 className="text-lg font-semibold leading-snug group-hover:text-primary transition-smooth line-clamp-2">
             {market.title}
           </h3>
+          {market.symbol && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Live Price:</span>
+              <LivePrice symbol={market.symbol} showChange={false} showBadge={true} />
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="relative space-y-4">
@@ -103,7 +110,7 @@ export const MarketCard = ({ market, onClick }) => {
               <TrendingUp className="h-4 w-4" />
               <span className="text-xs">Total Pool</span>
             </div>
-            <span className="font-mono font-semibold text-accent">{formatBNB(totalPool)} MATIC</span>
+            <span className="font-mono font-semibold text-accent">{formatBNB(totalPool)} AION</span>
           </div>
 
           <div className="flex items-center justify-between">

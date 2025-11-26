@@ -81,19 +81,19 @@ export const PortfolioPage = () => {
   const stats = [
     {
       label: 'Total Invested',
-      value: `${formatBNB(mockPortfolio.totalInvested)} MATIC`,
+      value: `${formatBNB(mockPortfolio.totalInvested)} AION`,
       icon: TrendingDown,
       color: 'text-primary',
     },
     {
       label: 'Total Earnings',
-      value: `${formatBNB(mockPortfolio.totalEarnings)} MATIC`,
+      value: `${formatBNB(mockPortfolio.totalEarnings)} AION`,
       icon: TrendingUp,
       color: 'text-accent',
     },
     {
       label: 'Profit/Loss',
-      value: `${mockPortfolio.profitLoss >= 0 ? '+' : ''}${formatBNB(mockPortfolio.profitLoss)} MATIC`,
+      value: `${mockPortfolio.profitLoss >= 0 ? '+' : ''}${formatBNB(mockPortfolio.profitLoss)} AION`,
       icon: mockPortfolio.profitLoss >= 0 ? TrendingUp : TrendingDown,
       color: mockPortfolio.profitLoss >= 0 ? 'text-success' : 'text-destructive',
     },
@@ -317,12 +317,12 @@ export const PortfolioPage = () => {
                     <div className="flex items-center space-x-8">
                       <div>
                         <div className="text-sm text-muted-foreground mb-1">Bet Amount</div>
-                        <div className="font-mono text-lg font-semibold">{formatBNB(bet.amount)} MATIC</div>
+                        <div className="font-mono text-lg font-semibold">{formatBNB(bet.amount)} AION</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground mb-1">Potential Return</div>
                         <div className="font-mono text-lg font-semibold text-accent">
-                          {formatBNB(bet.potentialReturn)} MATIC
+                          {formatBNB(bet.potentialReturn)} AION
                         </div>
                       </div>
                       <Button

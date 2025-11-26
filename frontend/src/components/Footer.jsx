@@ -97,9 +97,15 @@ export const Footer = () => {
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} AION-X. All rights reserved.
           </p>
-          <p className="text-sm text-muted-foreground">
-            Built on <span className="text-accent font-semibold">Polygon</span>
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+            <p className="text-sm text-muted-foreground">
+              Built on <span className="text-accent font-semibold">Polygon Amoy</span>
+            </p>
+            <span className="hidden sm:block text-muted-foreground">•</span>
+            <p className="text-sm text-muted-foreground">
+              Powered by <span className="text-purple-400 font-semibold">Pyth Network</span>
+            </p>
+          </div>
         </div>
       </div>
     </footer>

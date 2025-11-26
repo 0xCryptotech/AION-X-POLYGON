@@ -11,7 +11,7 @@ export const TournamentPage = () => {
     {
       id: 1,
       name: 'Community Prediction Cup',
-      prize: '100 MATIC',
+      prize: '100 AION',
       participants: 567,
       timeLeft: '6d 18h',
       status: 'active',
@@ -22,7 +22,7 @@ export const TournamentPage = () => {
     {
       id: 2,
       name: 'Newbie Challenge',
-      prize: '25 MATIC',
+      prize: '25 AION',
       participants: 234,
       timeLeft: '3d 12h',
       status: 'active',
@@ -33,11 +33,11 @@ export const TournamentPage = () => {
     {
       id: 3,
       name: 'Community Clash',
-      prize: '75 MATIC',
+      prize: '75 AION',
       participants: 445,
       timeLeft: '8d 4h',
       status: 'active',
-      entryFee: '0.01 MATIC',
+      entryFee: '0.01 AION',
       type: 'Community',
       description: 'Team-based tournament. Join forces with other traders!'
     }
@@ -47,36 +47,36 @@ export const TournamentPage = () => {
     {
       id: 1,
       name: 'Mega Battle Royale',
-      prize: '250 MATIC',
+      prize: '250 AION',
       participants: 1500,
       maxParticipants: 2000,
       timeLeft: '12h 30m',
       status: 'filling',
-      entryFee: '0.2 MATIC',
+      entryFee: '0.2 AION',
       type: 'Battle Royale',
       description: 'Last trader standing wins! Elimination-based tournament'
     },
     {
       id: 2,
       name: 'Speed Royale',
-      prize: '80 MATIC',
+      prize: '80 AION',
       participants: 456,
       maxParticipants: 500,
       timeLeft: '2h 15m',
       status: 'filling',
-      entryFee: '0.05 MATIC',
+      entryFee: '0.05 AION',
       type: 'Quick Royale',
       description: 'Fast-paced 30-minute elimination rounds'
     },
     {
       id: 3,
       name: 'Open Arena Championship',
-      prize: '500 MATIC',
+      prize: '500 AION',
       participants: 2340,
       maxParticipants: 5000,
       timeLeft: '1d 8h',
       status: 'filling',
-      entryFee: '0.5 MATIC',
+      entryFee: '0.5 AION',
       type: 'Grand Royale',
       description: 'The ultimate test! Multi-stage elimination tournament'
     }
@@ -85,32 +85,32 @@ export const TournamentPage = () => {
   const sponsorCup = [
     {
       id: 1,
-      name: 'Polygon Trading Cup',
-      prize: '1,000 MATIC',
+      name: 'Binance Trading Cup',
+      prize: '1,000 AION',
       participants: 3450,
       timeLeft: '15d 20h',
       status: 'active',
       entryFee: 'Free',
       type: 'Sponsored',
-      sponsor: 'Polygon',
-      description: 'Official Polygon partnership event with exclusive rewards'
+      sponsor: 'Binance',
+      description: 'Official Binance partnership event with exclusive rewards'
     },
     {
       id: 2,
       name: 'MetaMask Masters',
-      prize: '500 MATIC + NFTs',
+      prize: '500 AION + NFTs',
       participants: 1890,
       timeLeft: '10d 14h',
       status: 'active',
       entryFee: 'Free',
       type: 'Sponsored',
       sponsor: 'MetaMask',
-      description: 'Win MATIC + exclusive MetaMask NFT collection'
+      description: 'Win AION + exclusive MetaMask NFT collection'
     },
     {
       id: 3,
       name: 'CoinGecko Challenge',
-      prize: '300 MATIC + Merch',
+      prize: '300 AION + Merch',
       participants: 1234,
       timeLeft: '7d 6h',
       status: 'active',
@@ -122,7 +122,7 @@ export const TournamentPage = () => {
     {
       id: 4,
       name: 'PancakeSwap Prediction League',
-      prize: '750 MATIC + CAKE',
+      prize: '750 AION + CAKE',
       participants: 2567,
       timeLeft: '20d 10h',
       status: 'active',
@@ -137,31 +137,31 @@ export const TournamentPage = () => {
     {
       id: 1,
       name: 'Weekly Crypto Masters',
-      prize: '50 MATIC',
+      prize: '50 AION',
       participants: 234,
       timeLeft: '2d 14h',
       status: 'active',
-      entryFee: '0.1 MATIC',
+      entryFee: '0.1 AION',
       type: 'AI vs AI'
     },
     {
       id: 2,
       name: 'Speed Trading Challenge',
-      prize: '30 MATIC',
+      prize: '30 AION',
       participants: 156,
       timeLeft: '4d 8h',
       status: 'active',
-      entryFee: '0.05 MATIC',
+      entryFee: '0.05 AION',
       type: 'AI vs Human'
     },
     {
       id: 3,
       name: 'Prediction Pro League',
-      prize: '40 MATIC',
+      prize: '40 AION',
       participants: 189,
       timeLeft: '5d 20h',
       status: 'active',
-      entryFee: '0.08 MATIC',
+      entryFee: '0.08 AION',
       type: 'Human vs Human'
     }
   ];
@@ -170,108 +170,108 @@ export const TournamentPage = () => {
     {
       id: 1,
       name: 'Grand Championship',
-      prize: '500 MATIC',
+      prize: '500 AION',
       participants: 1250,
       timeLeft: '18d 12h',
       status: 'active',
-      entryFee: '1 MATIC',
+      entryFee: '1 AION',
       type: 'Mixed',
       description: 'The ultimate monthly showdown! All battle modes combined'
     },
     {
       id: 2,
       name: 'Elite Traders Cup',
-      prize: '300 MATIC',
+      prize: '300 AION',
       participants: 890,
       timeLeft: '22d 6h',
       status: 'active',
-      entryFee: '0.5 MATIC',
+      entryFee: '0.5 AION',
       type: 'AI vs AI',
       description: 'Top AI models compete for supremacy'
     },
     {
       id: 3,
       name: 'Diamond League',
-      prize: '750 MATIC',
+      prize: '750 AION',
       participants: 1567,
       timeLeft: '12d 18h',
       status: 'active',
-      entryFee: '2 MATIC',
+      entryFee: '2 AION',
       type: 'Premium',
       description: 'High-stakes tournament for experienced traders only'
     },
     {
       id: 4,
       name: 'Crypto Titans Battle',
-      prize: '400 MATIC',
+      prize: '400 AION',
       participants: 1045,
       timeLeft: '25d 8h',
       status: 'active',
-      entryFee: '0.8 MATIC',
+      entryFee: '0.8 AION',
       type: 'Human vs Human',
       description: 'Pure skill-based competition. No AI allowed!'
     },
     {
       id: 5,
       name: 'AI Supremacy League',
-      prize: '600 MATIC',
+      prize: '600 AION',
       participants: 2134,
       timeLeft: '14d 20h',
       status: 'active',
-      entryFee: '1.5 MATIC',
+      entryFee: '1.5 AION',
       type: 'AI vs Human',
       description: 'Can humans outsmart the machines? Prove it here!'
     },
     {
       id: 6,
       name: 'Whale Wars',
-      prize: '1,200 MATIC',
+      prize: '1,200 AION',
       participants: 456,
       timeLeft: '28d 4h',
       status: 'active',
-      entryFee: '5 MATIC',
+      entryFee: '5 AION',
       type: 'VIP',
       description: 'Exclusive high-roller tournament with massive rewards'
     }
   ];
 
   const leaderboard = [
-    { rank: 1, name: 'CryptoKing', score: 9850, prize: '15 MATIC' },
-    { rank: 2, name: 'AImaster', score: 9420, prize: '10 MATIC' },
-    { rank: 3, name: 'TradeBot', score: 8990, prize: '7 MATIC' },
-    { rank: 4, name: 'ProTrader', score: 8560, prize: '5 MATIC' },
-    { rank: 5, name: 'BullRunner', score: 8230, prize: '3 MATIC' }
+    { rank: 1, name: 'CryptoKing', score: 9850, prize: '15 AION' },
+    { rank: 2, name: 'AImaster', score: 9420, prize: '10 AION' },
+    { rank: 3, name: 'TradeBot', score: 8990, prize: '7 AION' },
+    { rank: 4, name: 'ProTrader', score: 8560, prize: '5 AION' },
+    { rank: 5, name: 'BullRunner', score: 8230, prize: '3 AION' }
   ];
 
   const liveEvents = [
     {
       id: 1,
       name: 'Flash Battle Royale',
-      prize: '10 MATIC',
+      prize: '10 AION',
       participants: 45,
       timeLeft: '15m 30s',
       status: 'live',
-      entryFee: '0.01 MATIC',
+      entryFee: '0.01 AION',
       type: 'Quick Match'
     },
     {
       id: 2,
       name: 'AI Showdown Live',
-      prize: '25 MATIC',
+      prize: '25 AION',
       participants: 128,
       timeLeft: '45m 12s',
       status: 'live',
-      entryFee: '0.05 MATIC',
+      entryFee: '0.05 AION',
       type: 'AI vs AI'
     },
     {
       id: 3,
       name: 'Rapid Fire Challenge',
-      prize: '15 MATIC',
+      prize: '15 AION',
       participants: 67,
       timeLeft: '28m 45s',
       status: 'live',
-      entryFee: '0.02 MATIC',
+      entryFee: '0.02 AION',
       type: 'Speed Battle'
     }
   ];
