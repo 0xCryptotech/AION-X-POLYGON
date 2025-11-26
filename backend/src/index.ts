@@ -1,8 +1,9 @@
-import express, { Request, Response } from "express";
-import bodyParser from "body-parser";
-import cors from "cors";
-import dotenv from "dotenv";
-import fs from "fs";
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const fs = require("fs");
+import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { ethers } from "ethers";
 dotenv.config();
@@ -20,6 +21,7 @@ const contractAbi = contractJson.abi || contractJson; // Handle both formats
 const contractAddress = process.env.CONTRACT_ADDRESS as string;
 const contract = new ethers.Contract(contractAddress, contractAbi, wallet);
 
+app.get("/", (req: Request, res: Response) => res.json({ message: "AION-X Backend API", status: "running" }));
 app.get("/health", (req: Request, res: Response) => res.json({ ok: true }));
 
 // Create market (admin) — also calls on-chain createMarket
@@ -27,7 +29,7 @@ app.post("/api/markets", async (req: Request, res: Response) => {
   try {
     const { title, outcomes, closeTimeEpoch, mode, oracle } = req.body;
     const modeEnum = mode === "AI_VS_AI" ? 0 : mode === "AI_VS_HUMAN" ? 1 : 2;
-    const tx = await contract.createMarket(title, outcomes, closeTimeEpoch, oracle, modeEnum, { gasLimit: 3000000 });
+    const tx = await contract.createMarket(title, outcomes, closeTimeEpoch, oracle, modeEnum, { gasLimit: 3000000, maxFeePerGas: ethers.utils.parseUnits('50', 'gwei'), maxPriorityFeePerGas: ethers.utils.parseUnits('30', 'gwei') });
     const receipt = await tx.wait();
     // We'll not parse event; store DB record with onchainId null for MVP
     const market = await prisma.market.create({
@@ -52,11 +54,10 @@ app.get("/api/markets", async (req: Request, res: Response) => {
   res.json(markets);
 });
 
-// Mock AI endpoint sink - backend can call external AI servers
+// Mock AI prediction endpoint
 app.post("/api/mock_ai/predict", async (req: Request, res: Response) => {
   try {
     const { marketId, aiId } = req.body;
-    // simplistic pseudorandom prediction
     const pUp = Math.min(0.95, Math.max(0.05, Math.random()*0.6 + 0.2));
     const pDown = 1 - pUp;
     const confidence = Math.abs(pUp - 0.5) * 2;

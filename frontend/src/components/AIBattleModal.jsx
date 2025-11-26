@@ -78,7 +78,9 @@ function FullscreenBattleModal({ onClose }) {
 
   useEffect(() => {
     const fetchMarkets = async () => {
+      console.log('[AIBattle] Fetching markets...');
       const markets = await getOpenMarkets();
+      console.log('[AIBattle] Received markets:', markets);
       setOpenMarkets(markets);
       const assetMarket = markets.find(m => m.title.includes(asset.replace('USDT', '')));
       if (assetMarket) setSelectedMarket(assetMarket);
