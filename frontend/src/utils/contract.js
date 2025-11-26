@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
-import PredictionMarketABI from '../../abi/PredictionMarket.json';
-import AIONTokenABI from '../../abi/AIONToken.json';
+import PredictionMarketABI from '../abi/PredictionMarket.json';
+import AIONTokenABI from '../abi/AIONToken.json';
 
 const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || '';
 const AION_TOKEN_ADDRESS = process.env.REACT_APP_TOKEN_ADDRESS || '';
