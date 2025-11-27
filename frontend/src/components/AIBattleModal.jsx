@@ -34,7 +34,7 @@ export default function AIBattleModal({ isOpen, onClose }) {
 }
 
 function FullscreenBattleModal({ onClose }) {
-  const { handlePlaceBet, loading: contractLoading } = useContract();
+  const { handlePlaceBet, loading: contractLoading, loadingMessage } = useContract();
   const { isConnected } = useWallet();
   
   // selections
@@ -485,11 +485,21 @@ function FullscreenBattleModal({ onClose }) {
               </div>
             )}
             <div className="flex gap-2">
-              <Button onClick={() => { setSelectedBet(null); setStake(10); }} disabled={isRunning}>Cancel</Button>
+              <Button onClick={() => { setSelectedBet(null); setStake(10); }} disabled={isRunning || contractLoading}>Cancel</Button>
               <Button onClick={startBattle} disabled={isRunning || contractLoading} className="bg-emerald-500">
-                {contractLoading ? 'Approving...' : 'Start Battle'}
+                {contractLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⏳</span>
+                    {loadingMessage || 'Processing...'}
+                  </span>
+                ) : 'Start Battle'}
               </Button>
             </div>
+            {contractLoading && loadingMessage && (
+              <div className="mt-2 text-xs text-cyan-400 animate-pulse text-center">
+                {loadingMessage}
+              </div>
+            )}
           </div>
         </div>
 

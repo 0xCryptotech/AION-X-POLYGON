@@ -4,12 +4,23 @@ import { toast } from 'sonner';
 
 export const useContract = () => {
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   const handlePlaceBet = async (marketId, outcome, amount) => {
     setLoading(true);
+    let toastId;
+    
     try {
-      const tx = await placeBet(marketId, outcome, amount);
-      toast.success('Bet placed successfully!');
+      // Show initial toast
+      toastId = toast.loading('Preparing transaction...');
+      
+      const tx = await placeBet(marketId, outcome, amount, (progress) => {
+        setLoadingMessage(progress);
+        toast.loading(progress, { id: toastId });
+      });
+      
+      toast.success('Bet placed successfully! 🎉', { id: toastId });
+      setLoadingMessage('');
       return tx;
     } catch (error) {
       console.error('Place bet error:', error);
@@ -21,8 +32,14 @@ export const useContract = () => {
       });
       
       const errorMsg = error.message || error.reason || 'Failed to place bet';
-      toast.error(errorMsg);
-      alert(`Error: ${errorMsg}`); // Show alert for debugging
+      
+      if (toastId) {
+        toast.error(errorMsg, { id: toastId });
+      } else {
+        toast.error(errorMsg);
+      }
+      
+      setLoadingMessage('');
       throw error;
     } finally {
       setLoading(false);
@@ -56,6 +73,7 @@ export const useContract = () => {
 
   return {
     loading,
+    loadingMessage,
     handlePlaceBet,
     handleWithdraw,
     checkClaimable,

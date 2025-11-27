@@ -18,8 +18,8 @@ export const getProvider = () => {
 
 // Get a reliable provider for read-only operations
 export const getReadOnlyProvider = () => {
-  // Use public Polygon Amoy RPC (more reliable than Alchemy for some regions)
-  const rpcUrl = 'https://rpc-amoy.polygon.technology/';
+  // Use Alchemy RPC for better reliability
+  const rpcUrl = import.meta.env.VITE_RPC_URL || 'https://polygon-amoy.g.alchemy.com/v2/TnBudoktgrSgm-wy0RkEg';
   return new ethers.providers.JsonRpcProvider(rpcUrl);
 };
 
@@ -42,9 +42,11 @@ export const createMarket = async (title, outcomes, closeTime, oracle, mode) => 
   }
 };
 
-export const placeBet = async (marketId, outcome, amount) => {
+export const placeBet = async (marketId, outcome, amount, onProgress) => {
   try {
     console.log('[placeBet] Starting place bet...');
+    onProgress?.('Connecting to wallet...');
+    
     const signer = await getSigner();
     if (!signer) throw new Error('Please connect your wallet');
     
@@ -56,6 +58,8 @@ export const placeBet = async (marketId, outcome, amount) => {
     
     // Check balance using read-only provider (bypass MetaMask RPC issues)
     console.log('[placeBet] Checking balance with read-only provider...');
+    onProgress?.('Checking balance...');
+    
     const readOnlyProvider = getReadOnlyProvider();
     console.log('[placeBet] Read-only provider URL:', readOnlyProvider.connection.url);
     
@@ -72,25 +76,56 @@ export const placeBet = async (marketId, outcome, amount) => {
     const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, signer);
     const contract = getContract(signer);
     
-    // Approve AION token first
-    console.log('[placeBet] Approving AION token...');
-    const approveTx = await tokenContract.approve(CONTRACT_ADDRESS, amountWei, { gasLimit: 100000 });
-    console.log('[placeBet] Approve tx sent:', approveTx.hash);
-    await approveTx.wait();
-    console.log('[placeBet] Approve confirmed');
+    // Get current gas price and add 20% buffer for faster confirmation
+    const provider = getProvider();
+    const gasPrice = await provider.getGasPrice();
+    const boostedGasPrice = gasPrice.mul(120).div(100); // 20% boost
+    console.log('[placeBet] Gas price:', ethers.utils.formatUnits(gasPrice, 'gwei'), 'gwei');
+    console.log('[placeBet] Boosted gas price:', ethers.utils.formatUnits(boostedGasPrice, 'gwei'), 'gwei');
     
-    // Place bet
+    // Approve AION token first with boosted gas
+    console.log('[placeBet] Approving AION token...');
+    onProgress?.('Approving AION token... (1/2)');
+    
+    const approveTx = await tokenContract.approve(CONTRACT_ADDRESS, amountWei, {
+      gasPrice: boostedGasPrice
+    });
+    console.log('[placeBet] Approve tx sent:', approveTx.hash);
+    onProgress?.(`Waiting for approval confirmation... (tx: ${approveTx.hash.slice(0, 10)}...)`);
+    
+    const approveReceipt = await approveTx.wait(1); // Wait for 1 confirmation
+    console.log('[placeBet] Approve confirmed in block:', approveReceipt.blockNumber);
+    
+    // Place bet with boosted gas
     console.log('[placeBet] Placing bet on market', marketId, 'outcome', outcome);
-    const tx = await contract.placeBet(marketId, outcome, amountWei, { gasLimit: 300000 });
+    onProgress?.('Placing bet... (2/2)');
+    
+    const tx = await contract.placeBet(marketId, outcome, amountWei, {
+      gasPrice: boostedGasPrice
+    });
     console.log('[placeBet] Bet tx sent:', tx.hash);
-    await tx.wait();
-    console.log('[placeBet] Bet confirmed');
+    onProgress?.(`Waiting for bet confirmation... (tx: ${tx.hash.slice(0, 10)}...)`);
+    
+    const receipt = await tx.wait(1); // Wait for 1 confirmation
+    console.log('[placeBet] Bet confirmed in block:', receipt.blockNumber);
+    onProgress?.('Bet confirmed! ✅');
+    
     return tx;
   } catch (error) {
     console.error('Place bet error:', error);
     console.error('Error message:', error.message);
     console.error('Error code:', error.code);
     console.error('Error data:', error.data);
+    
+    // Handle user rejection
+    if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
+      throw new Error('Transaction rejected by user');
+    }
+    
+    // Handle insufficient funds
+    if (error.code === 'INSUFFICIENT_FUNDS') {
+      throw new Error('Insufficient MATIC for gas fees');
+    }
     
     // Throw user-friendly error message
     if (error.message) {
