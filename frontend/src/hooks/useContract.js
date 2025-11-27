@@ -13,7 +13,16 @@ export const useContract = () => {
       return tx;
     } catch (error) {
       console.error('Place bet error:', error);
-      toast.error(error.message || 'Failed to place bet');
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        data: error.data
+      });
+      
+      const errorMsg = error.message || error.reason || 'Failed to place bet';
+      toast.error(errorMsg);
+      alert(`Error: ${errorMsg}`); // Show alert for debugging
       throw error;
     } finally {
       setLoading(false);

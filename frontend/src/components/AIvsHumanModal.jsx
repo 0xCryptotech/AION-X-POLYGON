@@ -3,6 +3,7 @@ import BattleResultModal from '@/components/BattleResultModal';
 import { useContract } from '@/hooks/useContract';
 import { useWallet } from '@/context/WalletContext';
 import { getOpenMarkets } from '@/utils/contract';
+import { getPythPrice } from '@/utils/pythPrice';
 import {
   Select,
   SelectTrigger,
@@ -34,10 +35,11 @@ function FullscreenBattleModal({ onClose }) {
   const [aiModel, setAiModel] = useState(AI_MODELS[0]);
   const [openMarkets, setOpenMarkets] = useState([]);
   const [selectedMarket, setSelectedMarket] = useState(null);
+  const [marketsLoading, setMarketsLoading] = useState(true);
+  const [marketsError, setMarketsError] = useState(null);
 
   const [price, setPrice] = useState(null);
   const [startPrice, setStartPrice] = useState(null);
-  const wsRef = useRef(null);
   const lastPriceRef = useRef(null);
   const lastUpdateRef = useRef(0);
 
@@ -58,10 +60,23 @@ function FullscreenBattleModal({ onClose }) {
 
   useEffect(() => {
     const fetchMarkets = async () => {
-      const markets = await getOpenMarkets();
-      setOpenMarkets(markets);
-      const assetMarket = markets.find(m => m.title.includes(asset.replace('USDT', '')));
-      if (assetMarket) setSelectedMarket(assetMarket);
+      try {
+        setMarketsLoading(true);
+        setMarketsError(null);
+        const markets = await getOpenMarkets();
+        setOpenMarkets(markets);
+        if (markets.length > 0) {
+          const assetMarket = markets.find(m => m.title.includes(asset.replace('USDT', '')));
+          if (assetMarket) setSelectedMarket(assetMarket);
+        } else {
+          setMarketsError('No open markets found');
+        }
+      } catch (error) {
+        console.error('[AIvsHumanModal] Error fetching markets:', error);
+        setMarketsError(error.message || 'Failed to load markets');
+      } finally {
+        setMarketsLoading(false);
+      }
     };
     fetchMarkets();
     const interval = setInterval(fetchMarkets, 30000);
@@ -69,36 +84,33 @@ function FullscreenBattleModal({ onClose }) {
   }, [asset]);
 
   useEffect(() => {
-    const symbol = asset?.toLowerCase();
-    if (!symbol) return;
+    if (!asset) return;
 
-    try {
-      if (wsRef.current) {
-        try { wsRef.current.close(); } catch (e) {}
-      }
-      wsRef.current = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
+    let mounted = true;
+    let intervalId;
 
-      wsRef.current.onmessage = (evt) => {
-        try {
-          const d = JSON.parse(evt.data);
-          if (d && d.p) {
-            const p = parseFloat(d.p);
-            lastPriceRef.current = p;
-            const now = Date.now();
-            if (now - lastUpdateRef.current > 300) {
-              lastUpdateRef.current = now;
-              setPrice(p);
-            }
+    const fetchPrice = async () => {
+      try {
+        const data = await getPythPrice(asset);
+        if (data && mounted) {
+          const now = Date.now();
+          if (now - lastUpdateRef.current > 300) {
+            lastUpdateRef.current = now;
+            lastPriceRef.current = data.price;
+            setPrice(data.price);
           }
-        } catch (e) {}
-      };
+        }
+      } catch (e) {
+        console.error('Pyth price fetch error:', e);
+      }
+    };
 
-      wsRef.current.onerror = () => {};
-    } catch (e) {}
+    fetchPrice();
+    intervalId = setInterval(fetchPrice, 3000);
 
     return () => {
-      try { wsRef.current?.close(); } catch (e) {}
-      wsRef.current = null;
+      mounted = false;
+      if (intervalId) clearInterval(intervalId);
     };
   }, [asset]);
 
@@ -226,29 +238,43 @@ function FullscreenBattleModal({ onClose }) {
                 Start: ${startPrice.toLocaleString()}
               </div>
             )}
-            <div className="text-[10px] text-slate-500 mt-1">Powered by Binance Market Data</div>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="text-[10px] text-purple-400 font-semibold">⚡ Powered by Pyth Network</div>
+              <div className="px-1.5 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded text-[9px] text-purple-300">Real-time Oracle</div>
+            </div>
           </div>
 
           <div className="col-span-1">
             <Label>Select Market</Label>
             <div className="mt-1">
-              <Select value={selectedMarket?.id?.toString()} onValueChange={(v) => {
-                const market = openMarkets.find(m => m.id.toString() === v);
-                setSelectedMarket(market);
-                if (market?.title.includes('BTC')) setAsset('BTCUSDT');
-                else if (market?.title.includes('ETH')) setAsset('ETHUSDT');
-                else if (market?.title.includes('SOL')) setAsset('SOLUSDT');
-                else if (market?.title.includes('BNB')) setAsset('BNBUSDT');
-                else if (market?.title.includes('XRP')) setAsset('XRPUSDT');
-              }}>
+              <Select 
+                value={selectedMarket?.id?.toString()} 
+                onValueChange={(v) => {
+                  const market = openMarkets.find(m => m.id.toString() === v);
+                  setSelectedMarket(market);
+                  if (market?.title.includes('BTC')) setAsset('BTCUSDT');
+                  else if (market?.title.includes('ETH')) setAsset('ETHUSDT');
+                  else if (market?.title.includes('SOL')) setAsset('SOLUSDT');
+                  else if (market?.title.includes('BNB')) setAsset('BNBUSDT');
+                  else if (market?.title.includes('XRP')) setAsset('XRPUSDT');
+                }}
+                disabled={marketsLoading}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select Market" />
+                  <SelectValue placeholder={
+                    marketsLoading ? "Loading markets..." : 
+                    openMarkets.length === 0 ? "No markets available" : 
+                    "Select Market"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {openMarkets.length === 0 && (
-                    <SelectItem value="none" disabled>Loading markets...</SelectItem>
+                  {marketsLoading && (
+                    <SelectItem value="loading" disabled>Loading markets...</SelectItem>
                   )}
-                  {openMarkets.map((m) => (
+                  {!marketsLoading && openMarkets.length === 0 && (
+                    <SelectItem value="none" disabled>No open markets found</SelectItem>
+                  )}
+                  {!marketsLoading && openMarkets.map((m) => (
                     <SelectItem key={m.id} value={m.id.toString()}>
                       {m.title} ({Math.floor((m.closeTime - Date.now()/1000)/60)}m left)
                     </SelectItem>
@@ -259,6 +285,16 @@ function FullscreenBattleModal({ onClose }) {
             {selectedMarket && (
               <div className="text-xs text-slate-400 mt-1">
                 Market #{selectedMarket.id} • Pool: {parseFloat(selectedMarket.totalStaked).toFixed(2)} AION
+              </div>
+            )}
+            {marketsLoading && (
+              <div className="text-xs text-blue-400 mt-1 animate-pulse">
+                🔄 Loading markets...
+              </div>
+            )}
+            {!marketsLoading && marketsError && (
+              <div className="text-xs text-red-400 mt-1">
+                ⚠️ {marketsError}
               </div>
             )}
           </div>

@@ -11,6 +11,7 @@ import { useWallet } from '@/context/WalletContext';
 import { useContract } from '@/hooks/useContract';
 import { getClaimable, getAIONBalance, getBattleHistory } from '@/utils/contract';
 import { useNavigate } from 'react-router-dom';
+import { ethers } from 'ethers';
 
 export const PortfolioPage = () => {
   const { isConnected, address } = useWallet();
@@ -22,6 +23,7 @@ export const PortfolioPage = () => {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [claimableAmount, setClaimableAmount] = useState('0');
   const [aionBalance, setAionBalance] = useState('0');
+  const [nativeBalance, setNativeBalance] = useState('0');
   const [battleHistory, setBattleHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const fileInputRef = useRef(null);
@@ -30,16 +32,29 @@ export const PortfolioPage = () => {
   const refreshData = async () => {
     if (isConnected && address) {
       console.log('[Portfolio] Fetching data for address:', address);
-      const [claimable, balance, history] = await Promise.all([
-        getClaimable(address),
-        getAIONBalance(address),
-        getBattleHistory(address)
-      ]);
-      console.log('[Portfolio] AION Balance:', balance);
-      console.log('[Portfolio] Claimable:', claimable);
-      setClaimableAmount(claimable);
-      setAionBalance(balance);
-      setBattleHistory(history);
+      try {
+        // Fetch native balance (POL)
+        const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : null;
+        if (provider) {
+          const nativeBal = await provider.getBalance(address);
+          const nativeFormatted = ethers.utils.formatEther(nativeBal);
+          console.log('[Portfolio] Native Balance (POL):', nativeFormatted);
+          setNativeBalance(nativeFormatted);
+        }
+        
+        const [claimable, balance, history] = await Promise.all([
+          getClaimable(address),
+          getAIONBalance(address),
+          getBattleHistory(address)
+        ]);
+        console.log('[Portfolio] AION Balance:', balance);
+        console.log('[Portfolio] Claimable:', claimable);
+        setClaimableAmount(claimable);
+        setAionBalance(balance);
+        setBattleHistory(history);
+      } catch (error) {
+        console.error('[Portfolio] Error fetching data:', error);
+      }
     }
   };
 
@@ -167,9 +182,15 @@ export const PortfolioPage = () => {
                     )}
                   </div>
                   {isConnected && (
-                    <div className="flex items-center gap-2 justify-center md:justify-start">
-                      <Coins className="h-4 w-4 text-yellow-400" />
-                      <span className="font-mono text-sm text-yellow-300">{parseFloat(aionBalance).toFixed(2)} AION</span>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 justify-center md:justify-start">
+                        <Coins className="h-4 w-4 text-yellow-400" />
+                        <span className="font-mono text-sm text-yellow-300">{parseFloat(aionBalance).toFixed(4)} AION</span>
+                      </div>
+                      <div className="flex items-center gap-2 justify-center md:justify-start">
+                        <Wallet className="h-4 w-4 text-purple-400" />
+                        <span className="font-mono text-sm text-purple-300">{parseFloat(nativeBalance).toFixed(4)} POL</span>
+                      </div>
                     </div>
                   )}
                   {isEditing ? (

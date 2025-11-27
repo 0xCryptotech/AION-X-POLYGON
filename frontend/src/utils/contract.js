@@ -2,8 +2,8 @@ import { ethers } from 'ethers';
 import PredictionMarketABI from '../abi/PredictionMarket.json';
 import AIONTokenABI from '../abi/AIONToken.json';
 
-const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS || '0x2C3B12e01313A8336179c5c850d64335137FAbab';
-const AION_TOKEN_ADDRESS = process.env.REACT_APP_TOKEN_ADDRESS || '0x1Ef64Ab093620c73DC656f57D0f7A7061586f331';
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x2C3B12e01313A8336179c5c850d64335137FAbab';
+const AION_TOKEN_ADDRESS = import.meta.env.VITE_TOKEN_ADDRESS || '0x1Ef64Ab093620c73DC656f57D0f7A7061586f331';
 
 export const getContract = (signer) => {
   return new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, signer);
@@ -14,6 +14,13 @@ export const getProvider = () => {
     return new ethers.providers.Web3Provider(window.ethereum);
   }
   return null;
+};
+
+// Get a reliable provider for read-only operations
+export const getReadOnlyProvider = () => {
+  // Use public Polygon Amoy RPC (more reliable than Alchemy for some regions)
+  const rpcUrl = 'https://rpc-amoy.polygon.technology/';
+  return new ethers.providers.JsonRpcProvider(rpcUrl);
 };
 
 export const getSigner = async () => {
@@ -37,29 +44,62 @@ export const createMarket = async (title, outcomes, closeTime, oracle, mode) => 
 
 export const placeBet = async (marketId, outcome, amount) => {
   try {
+    console.log('[placeBet] Starting place bet...');
     const signer = await getSigner();
-    const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, signer);
-    const contract = getContract(signer);
+    if (!signer) throw new Error('Please connect your wallet');
+    
+    const userAddress = await signer.getAddress();
+    console.log('[placeBet] User address:', userAddress);
     
     const amountWei = ethers.utils.parseEther(amount.toString());
+    console.log('[placeBet] Amount:', amount, 'AION');
     
-    // Check balance first
-    const balance = await tokenContract.balanceOf(await signer.getAddress());
+    // Check balance using read-only provider (bypass MetaMask RPC issues)
+    console.log('[placeBet] Checking balance with read-only provider...');
+    const readOnlyProvider = getReadOnlyProvider();
+    console.log('[placeBet] Read-only provider URL:', readOnlyProvider.connection.url);
+    
+    const readOnlyTokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, readOnlyProvider);
+    const balance = await readOnlyTokenContract.balanceOf(userAddress);
+    console.log('[placeBet] Balance:', ethers.utils.formatEther(balance), 'AION');
     if (balance.lt(amountWei)) {
       throw new Error(`Insufficient AION balance. Need ${amount} AION, have ${ethers.utils.formatEther(balance)} AION`);
     }
     
+    console.log('[placeBet] Balance check passed');
+    
+    // Now use signer for transactions
+    const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, signer);
+    const contract = getContract(signer);
+    
     // Approve AION token first
+    console.log('[placeBet] Approving AION token...');
     const approveTx = await tokenContract.approve(CONTRACT_ADDRESS, amountWei, { gasLimit: 100000 });
+    console.log('[placeBet] Approve tx sent:', approveTx.hash);
     await approveTx.wait();
+    console.log('[placeBet] Approve confirmed');
     
     // Place bet
+    console.log('[placeBet] Placing bet on market', marketId, 'outcome', outcome);
     const tx = await contract.placeBet(marketId, outcome, amountWei, { gasLimit: 300000 });
+    console.log('[placeBet] Bet tx sent:', tx.hash);
     await tx.wait();
+    console.log('[placeBet] Bet confirmed');
     return tx;
   } catch (error) {
     console.error('Place bet error:', error);
-    throw error;
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error data:', error.data);
+    
+    // Throw user-friendly error message
+    if (error.message) {
+      throw new Error(error.message);
+    } else if (error.reason) {
+      throw new Error(error.reason);
+    } else {
+      throw new Error('Failed to place bet. Please try again.');
+    }
   }
 };
 
@@ -124,11 +164,8 @@ export const getAIONBalance = async (address) => {
       return '0';
     }
     
-    const provider = getProvider();
-    if (!provider) {
-      console.error('[getAIONBalance] No provider available');
-      return '0';
-    }
+    // Use read-only provider for balance check (more reliable than MetaMask RPC)
+    const provider = getReadOnlyProvider();
     
     console.log('[getAIONBalance] Fetching balance for:', address);
     console.log('[getAIONBalance] Token address:', AION_TOKEN_ADDRESS);
@@ -188,9 +225,54 @@ export const getBattleHistory = async (userAddress) => {
 
 export const getOpenMarkets = async () => {
   try {
+    // Try fetching from backend API first
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://api.aion-x.xyz';
+    if (backendUrl) {
+      try {
+        console.log('[getOpenMarkets] Fetching from backend:', backendUrl);
+        const response = await fetch(`${backendUrl}/api/markets`);
+        if (response.ok) {
+          const markets = await response.json();
+          const now = Math.floor(Date.now() / 1000);
+          const openMarkets = markets
+            .filter(m => m.status === 'OPEN' && new Date(m.closeTime).getTime() / 1000 > now)
+            .map(m => ({
+              id: m.id,
+              title: m.title,
+              closeTime: Math.floor(new Date(m.closeTime).getTime() / 1000),
+              mode: m.mode === 'AI_VS_AI' ? 0 : m.mode === 'AI_VS_HUMAN' ? 1 : 2,
+              totalStaked: '0'
+            }));
+          console.log('[getOpenMarkets] Found', openMarkets.length, 'markets from backend');
+          if (openMarkets.length > 0) return openMarkets;
+        }
+      } catch (backendError) {
+        console.warn('[getOpenMarkets] Backend fetch failed, trying blockchain:', backendError.message);
+      }
+    }
+
+    // Fallback to blockchain
     const provider = getProvider();
+    if (!provider) {
+      console.warn('[getOpenMarkets] No provider available');
+      return [];
+    }
+
+    // Check if we're on the correct network
+    const network = await provider.getNetwork();
+    const expectedChainId = parseInt(import.meta.env.VITE_CHAIN_ID || '80002');
+    
+    if (network.chainId !== expectedChainId) {
+      console.error(`[getOpenMarkets] Wrong network! Connected to ${network.chainId}, expected ${expectedChainId} (Polygon Amoy)`);
+      console.error('[getOpenMarkets] Please switch to Polygon Amoy Testnet in your wallet');
+      return [];
+    }
+
+    console.log('[getOpenMarkets] Fetching from contract:', CONTRACT_ADDRESS);
     const contract = new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, provider);
     const marketCount = await contract.marketCount();
+    console.log('[getOpenMarkets] Total markets:', marketCount.toNumber());
+    
     const openMarkets = [];
     const now = Math.floor(Date.now() / 1000);
     
@@ -210,9 +292,16 @@ export const getOpenMarkets = async () => {
         });
       }
     }
+    console.log('[getOpenMarkets] Found', openMarkets.length, 'open markets');
     return openMarkets;
   } catch (error) {
-    console.error('Get open markets error:', error);
+    console.error('[getOpenMarkets] Error:', error.message);
+    if (error.code === 'CALL_EXCEPTION') {
+      console.error('[getOpenMarkets] Contract call failed. Possible reasons:');
+      console.error('  1. Wrong network - Please switch to Polygon Amoy Testnet');
+      console.error('  2. Contract not deployed at address:', CONTRACT_ADDRESS);
+      console.error('  3. RPC endpoint issue');
+    }
     return [];
   }
 };

@@ -9,6 +9,7 @@ import { Swords, Bot, User, Trophy, TrendingUp, TrendingDown, Plus } from 'lucid
 import AIBattleModal from '@/components/AIBattleModal';
 import AIvsHumanModal from '@/components/AIvsHumanModal';
 import HumanvsHumanModal from '@/components/HumanvsHumanModal';
+import { getPythPrice } from '@/utils/pythPrice';
 
 const TIMEFRAMES = ["M1", "M5", "M10", "M15", "M30", "H1"];
 const AI_MODELS = ["GPT-5 Oracle", "Claude-3", "DeepMind-FX", "Bloom-Alpha"];
@@ -149,7 +150,6 @@ export const BattlePage = () => {
   const [countdown, setCountdown] = useState(0);
   const [leaderboard, setLeaderboard] = useState({});
   const [history, setHistory] = useState([]);
-  const wsRef = useRef(null);
   const audioRef = useRef(null);
   const [showBattleModal, setShowBattleModal] = useState(false);
   const [showAIvsHumanModal, setShowAIvsHumanModal] = useState(false);
@@ -158,7 +158,7 @@ export const BattlePage = () => {
   const [selectedAIModel, setSelectedAIModel] = useState('GPT-4 Oracle');
   const [selectedCategory, setSelectedCategory] = useState('Crypto');
   const [selectedAsset, setSelectedAsset] = useState('BTCUSDT');
-  const [livePrice, setLivePrice] = useState(111297.01);
+  const [livePrice, setLivePrice] = useState(null);
   const [confidence, setConfidence] = useState(97.8);
   const [trend, setTrend] = useState('Bullish');
   const [timeframePredictions, setTimeframePredictions] = useState([
@@ -177,45 +177,75 @@ export const BattlePage = () => {
     'Esport': ['DOTA2', 'LOL', 'CSGO', 'VALORANT']
   };
   
+  // Fetch real price from Pyth Network
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLivePrice(prev => {
-        const change = (Math.random() - 0.5) * 100;
-        return +(prev + change).toFixed(2);
-      });
-      setConfidence(prev => {
-        const change = (Math.random() - 0.5) * 2;
-        return Math.min(99.9, Math.max(85, +(prev + change).toFixed(1)));
-      });
-      setTrend(Math.random() > 0.3 ? 'Bullish' : 'Bearish');
-      setTimeframePredictions(prev => prev.map(tf => ({
-        ...tf,
-        change: +((Math.random() - 0.5) * 2).toFixed(1),
-        trend: Math.random() > 0.4 ? 'up' : 'down'
-      })));
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+    if (selectedCategory !== 'Crypto') return;
+    
+    let mounted = true;
+    let prevPriceRef = livePrice;
+    
+    const fetchPrice = async () => {
+      try {
+        const data = await getPythPrice(selectedAsset);
+        if (data && mounted) {
+          const newPrice = data.price;
+          
+          // Update trend based on price movement
+          if (prevPriceRef && newPrice > prevPriceRef) {
+            setTrend('Bullish');
+          } else if (prevPriceRef && newPrice < prevPriceRef) {
+            setTrend('Bearish');
+          }
+          
+          prevPriceRef = newPrice;
+          setLivePrice(newPrice);
+          
+          // Update confidence with slight variation
+          setConfidence(prev => {
+            const change = (Math.random() - 0.5) * 2;
+            return Math.min(99.9, Math.max(85, +(prev + change).toFixed(1)));
+          });
+        }
+      } catch (e) {
+        console.error('Pyth price fetch error:', e);
+      }
+    };
+    
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 3000);
+    
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [selectedAsset, selectedCategory]);
 
   const currentBattle = battles.find(b => b.id === openModal);
 
   useEffect(() => {
     if (!currentBattle) return;
-    const symbol = currentBattle.asset === 'BTC' ? 'btcusdt' : currentBattle.asset === 'ETH' ? 'ethusdt' : currentBattle.asset === 'GOLD' ? 'xauusdt' : 'btcusdt';
+    const symbol = currentBattle.asset === 'BTC' ? 'BTCUSDT' : currentBattle.asset === 'ETH' ? 'ETHUSDT' : 'BTCUSDT';
     
-    try {
-      if (wsRef.current) wsRef.current.close();
-      wsRef.current = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol}@trade`);
-      wsRef.current.onmessage = (evt) => {
-        try {
-          const d = JSON.parse(evt.data);
-          if (d?.p) setLivePrice(parseFloat(d.p));
-        } catch (e) {}
-      };
-    } catch (e) {}
+    let mounted = true;
+    let intervalId;
+
+    const fetchPrice = async () => {
+      try {
+        const data = await getPythPrice(symbol);
+        if (data && mounted) {
+          setLivePrice(data.price);
+        }
+      } catch (e) {
+        console.error('Pyth price fetch error:', e);
+      }
+    };
+
+    fetchPrice();
+    intervalId = setInterval(fetchPrice, 3000);
 
     return () => {
-      try { wsRef.current?.close(); } catch (e) {}
+      mounted = false;
+      if (intervalId) clearInterval(intervalId);
     };
   }, [currentBattle]);
 
@@ -452,9 +482,12 @@ export const BattlePage = () => {
                       <div className="text-sm text-slate-400 mb-2">₿ Bitcoin</div>
                       <div className={`text-xs ${trend === 'Bullish' ? 'text-green-400' : 'text-red-400'} mb-3`}>{selectedAIModel} • {confidence}%</div>
                       <div className={`text-4xl font-black bg-gradient-to-r ${trend === 'Bullish' ? 'from-green-400 to-emerald-400' : 'from-red-400 to-rose-400'} bg-clip-text text-transparent mb-2 transition-all duration-300`}>
-                        ${livePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {livePrice ? `$${livePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Loading...'}
                       </div>
-                      <div className="text-xs text-slate-500 mb-4">Powered by Binance Market Data</div>
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <div className="text-xs text-purple-400 font-semibold">⚡ Powered by Pyth Network</div>
+                        <div className="px-1.5 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded text-[9px] text-purple-300">Real-time Oracle</div>
+                      </div>
                       <div className="flex items-center justify-center gap-2">
                         <div className="text-3xl">{trend === 'Bullish' ? '📈' : '📉'}</div>
                         <div className="text-center">
