@@ -75,31 +75,25 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
     const amountWei = ethers.utils.parseEther(amount.toString());
     console.log('[placeBet] Amount:', amount, 'AION');
     
-    // Check balance using read-only provider (bypass MetaMask RPC issues)
-    console.log('[placeBet] Checking balance with read-only provider...');
-    onProgress?.('Checking balance...');
+    // Optional: Try to check balance, but don't fail if it doesn't work
+    // MetaMask will reject the transaction if balance is insufficient anyway
+    console.log('[placeBet] Attempting balance check...');
+    onProgress?.('Preparing transaction...');
     
-    let balance;
     try {
-      const readOnlyProvider = getReadOnlyProvider();
-      console.log('[placeBet] Read-only provider URL:', readOnlyProvider.connection.url);
-      
-      const readOnlyTokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, readOnlyProvider);
-      balance = await readOnlyTokenContract.balanceOf(userAddress);
+      const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, signer);
+      const balance = await tokenContract.balanceOf(userAddress);
       console.log('[placeBet] Balance:', ethers.utils.formatEther(balance), 'AION');
+      
+      if (balance.lt(amountWei)) {
+        throw new Error(`Insufficient AION balance. Need ${amount} AION, have ${ethers.utils.formatEther(balance)} AION`);
+      }
+      console.log('[placeBet] Balance check passed');
     } catch (balanceError) {
-      console.warn('[placeBet] Read-only provider failed, trying with signer provider');
-      // Fallback to signer's provider
-      const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, provider);
-      balance = await tokenContract.balanceOf(userAddress);
-      console.log('[placeBet] Balance (fallback):', ethers.utils.formatEther(balance), 'AION');
+      console.warn('[placeBet] Balance check failed, proceeding anyway. MetaMask will validate.', balanceError.message);
+      // Don't throw - let the transaction attempt proceed
+      // MetaMask will show error if balance is insufficient
     }
-    
-    if (balance.lt(amountWei)) {
-      throw new Error(`Insufficient AION balance. Need ${amount} AION, have ${ethers.utils.formatEther(balance)} AION`);
-    }
-    
-    console.log('[placeBet] Balance check passed');
     
     // Now use signer for transactions
     const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, signer);
@@ -152,16 +146,26 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
     
     // Handle insufficient funds
     if (error.code === 'INSUFFICIENT_FUNDS') {
-      throw new Error('Insufficient MATIC for gas fees');
+      throw new Error('Insufficient MATIC for gas fees. Please get MATIC from faucet.');
+    }
+    
+    // Handle CALL_EXCEPTION (wrong network or contract not found)
+    if (error.code === 'CALL_EXCEPTION') {
+      throw new Error('Contract call failed. Please ensure you are on Polygon Amoy Testnet (Chain ID: 80002) and have AION tokens.');
+    }
+    
+    // Handle network errors
+    if (error.message && error.message.includes('network')) {
+      throw new Error('Network error. Please check your connection and try again.');
     }
     
     // Throw user-friendly error message
-    if (error.message) {
+    if (error.message && !error.message.includes('call revert exception')) {
       throw new Error(error.message);
     } else if (error.reason) {
       throw new Error(error.reason);
     } else {
-      throw new Error('Failed to place bet. Please try again.');
+      throw new Error('Failed to place bet. Please ensure you have enough AION tokens and MATIC for gas.');
     }
   }
 };
@@ -227,21 +231,34 @@ export const getAIONBalance = async (address) => {
       return '0';
     }
     
-    // Use read-only provider for balance check (more reliable than MetaMask RPC)
-    const provider = getReadOnlyProvider();
-    
     console.log('[getAIONBalance] Fetching balance for:', address);
     console.log('[getAIONBalance] Token address:', AION_TOKEN_ADDRESS);
     
-    const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, provider);
+    // Try with signer's provider first (uses user's connected network)
+    try {
+      const provider = getProvider();
+      if (provider) {
+        const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, provider);
+        const balance = await tokenContract.balanceOf(address);
+        const formatted = ethers.utils.formatEther(balance);
+        console.log('[getAIONBalance] Balance:', formatted, 'AION');
+        return formatted;
+      }
+    } catch (providerError) {
+      console.warn('[getAIONBalance] Provider check failed, trying read-only');
+    }
+    
+    // Fallback to read-only provider
+    const readOnlyProvider = getReadOnlyProvider();
+    const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, readOnlyProvider);
     const balance = await tokenContract.balanceOf(address);
     const formatted = ethers.utils.formatEther(balance);
     
-    console.log('[getAIONBalance] Balance:', formatted, 'AION');
+    console.log('[getAIONBalance] Balance (read-only):', formatted, 'AION');
     return formatted;
   } catch (error) {
     console.error('[getAIONBalance] Error:', error.message);
-    console.error('[getAIONBalance] Full error:', error);
+    console.error('[getAIONBalance] This usually means wrong network or contract not deployed');
     return '0';
   }
 };
