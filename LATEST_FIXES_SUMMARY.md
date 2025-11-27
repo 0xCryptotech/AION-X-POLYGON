@@ -19,18 +19,20 @@
 ---
 
 ## Fix 2: CALL_EXCEPTION Error ✅
-**Problem**: Error `CALL_EXCEPTION` pada `balanceOf` method
+**Problem**: Error `CALL_EXCEPTION` pada `balanceOf` method blocking transactions
 
 **Root Cause**:
 - User connect ke wrong network
 - RPC provider tidak bisa reach contract
+- Balance check failing and blocking transaction
 
 **Solution**:
 - Network validation sebelum place bet (check Chain ID)
-- RPC fallback mechanism (primary → fallback)
-- Balance check dengan fallback provider
+- **Skip balance check jika RPC gagal** - let MetaMask validate
+- Balance check sekarang optional, tidak block transaction
+- Better error messages untuk CALL_EXCEPTION
 - Network indicator di UI
-- Clear error messages untuk wrong network
+- Improved getAIONBalance with provider fallback
 
 **Files**:
 - `frontend/src/utils/contract.js`
@@ -38,15 +40,22 @@
 
 **Docs**: `CALL_EXCEPTION_FIX.md`
 
+**Key Change**: Balance check tidak lagi mandatory. Jika RPC gagal, transaksi tetap proceed dan MetaMask akan validate balance.
+
 ---
 
 ## Deployment Status
 
 ### GitHub
-✅ Pushed to main branch (commit: f339b4c7)
+✅ Pushed to main branch (commit: 934501e5)
 
 ### Vercel
 🔄 Auto-deploying (check: https://vercel.com/dashboard)
+
+### Latest Update
+- Skip balance check on RPC failure
+- MetaMask now handles balance validation
+- Better error messages
 
 ### Testing Checklist
 - [ ] Connect wallet to Polygon Amoy (Chain ID: 80002)
