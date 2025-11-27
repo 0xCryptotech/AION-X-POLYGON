@@ -76,6 +76,7 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
     console.log('[placeBet] Amount:', amount, 'AION');
     
     // Optional: Try to check balance, but don't fail if it doesn't work
+    // MetaMask will reject the transaction if balance is insufficient anyway
     console.log('[placeBet] Attempting balance check...');
     onProgress?.('Preparing transaction...');
     
@@ -90,6 +91,8 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
       console.log('[placeBet] Balance check passed');
     } catch (balanceError) {
       console.warn('[placeBet] Balance check failed, proceeding anyway. MetaMask will validate.', balanceError.message);
+      // Don't throw - let the transaction attempt proceed
+      // MetaMask will show error if balance is insufficient
     }
     
     // Now use signer for transactions
@@ -102,35 +105,8 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
     console.log('[placeBet] Gas price:', ethers.utils.formatUnits(gasPrice, 'gwei'), 'gwei');
     console.log('[placeBet] Boosted gas price:', ethers.utils.formatUnits(boostedGasPrice, 'gwei'), 'gwei');
     
-    // ============================================
-    // V3: CHECK CURRENT ALLOWANCE FIRST
-    // ============================================
-    console.log('[placeBet] Checking current allowance...');
-    onProgress?.('Checking token allowance...');
-    
-    let currentAllowance;
-    try {
-      currentAllowance = await tokenContract.allowance(userAddress, CONTRACT_ADDRESS);
-      console.log('[placeBet] Current allowance:', ethers.utils.formatEther(currentAllowance), 'AION');
-    } catch (allowanceError) {
-      console.warn('[placeBet] Failed to check allowance, will approve anyway');
-      currentAllowance = ethers.BigNumber.from(0);
-    }
-    
-    // ============================================
-    // V3: SKIP APPROVE IF ALLOWANCE SUFFICIENT
-    // ============================================
-    if (currentAllowance.gte(amountWei)) {
-      console.log('[placeBet] Allowance sufficient, skipping approval ✅');
-      onProgress?.('Allowance sufficient, skipping approval ✅');
-      // Directly execute place bet
-      return await executePlaceBet(contract, marketId, outcome, amountWei, provider, onProgress);
-    }
-    
-    // ============================================
-    // V3: APPROVE IF NEEDED
-    // ============================================
-    console.log('[placeBet] Allowance insufficient, approving AION token...');
+    // Approve AION token first with boosted gas
+    console.log('[placeBet] Approving AION token...');
     onProgress?.('Approving AION token... (1/2)');
     
     const approveTx = await tokenContract.approve(CONTRACT_ADDRESS, amountWei, {
@@ -139,65 +115,29 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
     console.log('[placeBet] Approve tx sent:', approveTx.hash);
     onProgress?.(`Waiting for approval confirmation... (tx: ${approveTx.hash.slice(0, 10)}...)`);
     
-    // V3: Wait for 2 confirmations (more secure)
-    const approveReceipt = await approveTx.wait(2);
+    const approveReceipt = await approveTx.wait(1); // Wait for 1 confirmation
     console.log('[placeBet] Approve confirmed in block:', approveReceipt.blockNumber);
     
-    // ============================================
-    // V3: VERIFY ALLOWANCE UPDATE (12 attempts, 24s)
-    // ============================================
-    console.log('[placeBet] Verifying allowance update...');
-    onProgress?.('Verifying approval...');
+    // Place bet with boosted gas
+    console.log('[placeBet] Placing bet on market', marketId, 'outcome', outcome);
+    onProgress?.('Placing bet... (2/2)');
     
-    let allowanceVerified = false;
-    let verifyAttempts = 0;
-    const maxVerifyAttempts = 12; // 24 seconds total (12 x 2s)
+    const tx = await contract.placeBet(marketId, outcome, amountWei, {
+      gasPrice: boostedGasPrice
+    });
+    console.log('[placeBet] Bet tx sent:', tx.hash);
+    onProgress?.(`Waiting for bet confirmation... (tx: ${tx.hash.slice(0, 10)}...)`);
     
-    while (!allowanceVerified && verifyAttempts < maxVerifyAttempts) {
-      verifyAttempts++;
-      console.log(`[placeBet] Allowance verification attempt ${verifyAttempts}/${maxVerifyAttempts}`);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-      
-      try {
-        const newAllowance = await tokenContract.allowance(userAddress, CONTRACT_ADDRESS);
-        console.log('[placeBet] New allowance:', ethers.utils.formatEther(newAllowance), 'AION');
-        
-        if (newAllowance.gte(amountWei)) {
-          allowanceVerified = true;
-          console.log('[placeBet] Allowance verified! ✅');
-          onProgress?.('Approval verified! ✅');
-        }
-      } catch (verifyError) {
-        console.warn('[placeBet] Allowance verification attempt failed:', verifyError.message);
-      }
-    }
+    const receipt = await tx.wait(1); // Wait for 1 confirmation
+    console.log('[placeBet] Bet confirmed in block:', receipt.blockNumber);
+    onProgress?.('Bet confirmed! ✅');
     
-    if (!allowanceVerified) {
-      throw new Error('Allowance verification timeout after 24 seconds. Please wait 10-20 seconds and try again (approval will be skipped next time).');
-    }
-    
-    // ============================================
-    // V3: EXECUTE PLACE BET
-    // ============================================
-    return await executePlaceBet(contract, marketId, outcome, amountWei, provider, onProgress);
+    return tx;
   } catch (error) {
     console.error('Place bet error:', error);
     console.error('Error message:', error.message);
     console.error('Error code:', error.code);
     console.error('Error data:', error.data);
-    
-    // V3: Extract detailed error from error.data.message
-    let detailedMessage = error.message;
-    if (error.data?.message) {
-      if (error.data.message.includes('Market is closed') || error.data.message.includes('Market not open')) {
-        detailedMessage = 'This market is already closed. Please select another market.';
-      } else if (error.data.message.includes('Insufficient allowance')) {
-        detailedMessage = 'Insufficient token allowance. Please try again.';
-      } else if (error.data.message.includes('Insufficient balance')) {
-        detailedMessage = 'Insufficient AION balance for this bet.';
-      }
-    }
     
     // Handle user rejection
     if (error.code === 4001 || error.code === 'ACTION_REJECTED') {
@@ -214,97 +154,19 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
       throw new Error('Contract call failed. Please ensure you are on Polygon Amoy Testnet (Chain ID: 80002) and have AION tokens.');
     }
     
-    // Handle allowance verification timeout
-    if (error.message && error.message.includes('Allowance verification timeout')) {
-      throw new Error(detailedMessage);
-    }
-    
     // Handle network errors
     if (error.message && error.message.includes('network')) {
       throw new Error('Network error. Please check your connection and try again.');
     }
     
-    // Throw detailed or original error message
-    if (detailedMessage !== error.message) {
-      throw new Error(detailedMessage);
-    } else if (error.message && !error.message.includes('call revert exception')) {
+    // Throw user-friendly error message
+    if (error.message && !error.message.includes('call revert exception')) {
       throw new Error(error.message);
     } else if (error.reason) {
       throw new Error(error.reason);
     } else {
       throw new Error('Failed to place bet. Please ensure you have enough AION tokens and MATIC for gas.');
     }
-  }
-};
-
-// ============================================
-// V3: HELPER FUNCTION - EXECUTE PLACE BET
-// ============================================
-const executePlaceBet = async (contract, marketId, outcome, amountWei, provider, onProgress) => {
-  try {
-    // Get boosted gas price
-    const gasPrice = await provider.getGasPrice();
-    const boostedGasPrice = gasPrice.mul(120).div(100); // 20% boost
-    
-    // ============================================
-    // V3: ESTIMATE GAS WITH RETRY (3 attempts)
-    // ============================================
-    console.log('[executePlaceBet] Estimating gas for place bet...');
-    let gasLimit;
-    let estimateAttempts = 0;
-    const maxEstimateAttempts = 3;
-    
-    while (estimateAttempts < maxEstimateAttempts) {
-      estimateAttempts++;
-      try {
-        gasLimit = await contract.estimateGas.placeBet(marketId, outcome, amountWei);
-        console.log('[executePlaceBet] Estimated gas limit:', gasLimit.toString());
-        // Add 20% buffer to gas limit
-        gasLimit = gasLimit.mul(120).div(100);
-        console.log('[executePlaceBet] Gas limit with buffer:', gasLimit.toString());
-        break;
-      } catch (estimateError) {
-        console.warn(`[executePlaceBet] Gas estimation attempt ${estimateAttempts} failed:`, estimateError.message);
-        if (estimateAttempts >= maxEstimateAttempts) {
-          console.warn('[executePlaceBet] Using fallback gas limit');
-          gasLimit = ethers.BigNumber.from(300000); // Fallback gas limit
-        }
-      }
-    }
-    
-    // ============================================
-    // V3: PLACE BET
-    // ============================================
-    console.log('[executePlaceBet] Placing bet on market', marketId, 'outcome', outcome);
-    onProgress?.('Placing bet... (2/2)');
-    
-    const tx = await contract.placeBet(marketId, outcome, amountWei, {
-      gasPrice: boostedGasPrice,
-      gasLimit: gasLimit
-    });
-    console.log('[executePlaceBet] Bet tx sent:', tx.hash);
-    onProgress?.(`Waiting for bet confirmation... (tx: ${tx.hash.slice(0, 10)}...)`);
-    
-    // V3: Wait for 2 confirmations (more secure)
-    const receipt = await tx.wait(2);
-    console.log('[executePlaceBet] Bet confirmed in block:', receipt.blockNumber);
-    console.log('[executePlaceBet] Gas used:', receipt.gasUsed.toString());
-    onProgress?.('Bet confirmed! ✅');
-    
-    return tx;
-  } catch (error) {
-    console.error('[executePlaceBet] Error:', error);
-    
-    // V3: Extract detailed error from error.data.message
-    if (error.data?.message) {
-      if (error.data.message.includes('Market is closed') || error.data.message.includes('Market not open')) {
-        throw new Error('This market is already closed. Please select another market.');
-      } else if (error.data.message.includes('Insufficient balance')) {
-        throw new Error('Insufficient AION balance for this bet.');
-      }
-    }
-    
-    throw error;
   }
 };
 
