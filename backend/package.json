@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn src/index.ts",
     "start": "node dist/index.js",
-    "auto-resolve": "node autoResolve.js"
+    "auto-resolve": "node autoResolve.js",
+    "market-cron": "node marketCronService.js"
   },
   "dependencies": {
     "@prisma/client": "^4.14.0",

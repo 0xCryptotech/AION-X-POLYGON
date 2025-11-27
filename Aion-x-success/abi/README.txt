@@ -1,0 +1,1 @@
+Place the contract ABI JSON here: copy artifacts/contracts/PredictionMarket.sol/PredictionMarket.json from Hardhat after compilation/deploy.

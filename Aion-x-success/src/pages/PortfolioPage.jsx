@@ -11,7 +11,6 @@ import { useWallet } from '@/context/WalletContext';
 import { useContract } from '@/hooks/useContract';
 import { getClaimable, getAIONBalance, getBattleHistory } from '@/utils/contract';
 import { useNavigate } from 'react-router-dom';
-import { ethers } from 'ethers';
 
 export const PortfolioPage = () => {
   const { isConnected, address } = useWallet();
@@ -23,55 +22,24 @@ export const PortfolioPage = () => {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [claimableAmount, setClaimableAmount] = useState('0');
   const [aionBalance, setAionBalance] = useState('0');
-  const [nativeBalance, setNativeBalance] = useState('0');
   const [battleHistory, setBattleHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [loadingBalance, setLoadingBalance] = useState(false);
   const fileInputRef = useRef(null);
   const refreshIntervalRef = useRef(null);
 
   const refreshData = async () => {
     if (isConnected && address) {
       console.log('[Portfolio] Fetching data for address:', address);
-      setLoadingBalance(true);
-      try {
-        // Fetch native balance (POL) and AION balance in parallel
-        const provider = window.ethereum ? new ethers.providers.Web3Provider(window.ethereum) : null;
-        
-        const balancePromises = [];
-        
-        if (provider) {
-          balancePromises.push(
-            provider.getBalance(address).then(nativeBal => {
-              const nativeFormatted = ethers.utils.formatEther(nativeBal);
-              console.log('[Portfolio] Native Balance (POL):', nativeFormatted);
-              setNativeBalance(nativeFormatted);
-            })
-          );
-        }
-        
-        balancePromises.push(
-          getClaimable(address).then(claimable => {
-            console.log('[Portfolio] Claimable:', claimable);
-            setClaimableAmount(claimable);
-          }),
-          getAIONBalance(address).then(balance => {
-            console.log('[Portfolio] AION Balance:', balance);
-            setAionBalance(balance);
-          })
-        );
-        
-        // Fetch balances first (fast)
-        await Promise.all(balancePromises);
-        setLoadingBalance(false);
-        
-        // Fetch history separately (slow, don't block UI)
-        const history = await getBattleHistory(address);
-        setBattleHistory(history);
-      } catch (error) {
-        console.error('[Portfolio] Error fetching data:', error);
-        setLoadingBalance(false);
-      }
+      const [claimable, balance, history] = await Promise.all([
+        getClaimable(address),
+        getAIONBalance(address),
+        getBattleHistory(address)
+      ]);
+      console.log('[Portfolio] AION Balance:', balance);
+      console.log('[Portfolio] Claimable:', claimable);
+      setClaimableAmount(claimable);
+      setAionBalance(balance);
+      setBattleHistory(history);
     }
   };
 
@@ -80,8 +48,8 @@ export const PortfolioPage = () => {
       setLoadingHistory(true);
       refreshData().finally(() => setLoadingHistory(false));
       
-      // Auto-refresh every 10 seconds (reduced from 5s for better performance)
-      refreshIntervalRef.current = setInterval(refreshData, 10000);
+      // Auto-refresh every 5 seconds
+      refreshIntervalRef.current = setInterval(refreshData, 5000);
       
       return () => {
         if (refreshIntervalRef.current) {
@@ -199,21 +167,9 @@ export const PortfolioPage = () => {
                     )}
                   </div>
                   {isConnected && (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 justify-center md:justify-start">
-                        <Coins className="h-4 w-4 text-yellow-400" />
-                        <span className="font-mono text-sm text-yellow-300">
-                          {loadingBalance ? (
-                            <span className="animate-pulse">Loading...</span>
-                          ) : (
-                            `${parseFloat(aionBalance).toFixed(4)} AION`
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 justify-center md:justify-start">
-                        <Wallet className="h-4 w-4 text-purple-400" />
-                        <span className="font-mono text-sm text-purple-300">{parseFloat(nativeBalance).toFixed(4)} POL</span>
-                      </div>
+                    <div className="flex items-center gap-2 justify-center md:justify-start">
+                      <Coins className="h-4 w-4 text-yellow-400" />
+                      <span className="font-mono text-sm text-yellow-300">{parseFloat(aionBalance).toFixed(2)} AION</span>
                     </div>
                   )}
                   {isEditing ? (

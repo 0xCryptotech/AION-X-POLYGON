@@ -1,0 +1,220 @@
+import { ethers } from 'ethers';
+import PredictionMarketABI from '../abi/PredictionMarket.json';
+import AIONTokenABI from '../abi/AIONToken.json';
+
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x2C3B12e01313A8336179c5c850d64335137FAbab';
+const AION_TOKEN_ADDRESS = import.meta.env.VITE_TOKEN_ADDRESS || '0x1Ef64Ab093620c73DC656f57D0f7A7061586f331';
+
+export const getContract = (signer) => {
+  return new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, signer);
+};
+
+export const getProvider = () => {
+  if (window.ethereum) {
+    return new ethers.providers.Web3Provider(window.ethereum);
+  }
+  return null;
+};
+
+export const getSigner = async () => {
+  const provider = getProvider();
+  if (!provider) return null;
+  return provider.getSigner();
+};
+
+export const createMarket = async (title, outcomes, closeTime, oracle, mode) => {
+  try {
+    const signer = await getSigner();
+    const contract = getContract(signer);
+    const tx = await contract.createMarket(title, outcomes, closeTime, oracle, mode);
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error('Create market error:', error);
+    throw error;
+  }
+};
+
+export const placeBet = async (marketId, outcome, amount) => {
+  try {
+    const signer = await getSigner();
+    const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, signer);
+    const contract = getContract(signer);
+    
+    const amountWei = ethers.utils.parseEther(amount.toString());
+    
+    // Check balance first
+    const balance = await tokenContract.balanceOf(await signer.getAddress());
+    if (balance.lt(amountWei)) {
+      throw new Error(`Insufficient AION balance. Need ${amount} AION, have ${ethers.utils.formatEther(balance)} AION`);
+    }
+    
+    // Approve AION token first
+    const approveTx = await tokenContract.approve(CONTRACT_ADDRESS, amountWei, { gasLimit: 100000 });
+    await approveTx.wait();
+    
+    // Place bet
+    const tx = await contract.placeBet(marketId, outcome, amountWei, { gasLimit: 300000 });
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error('Place bet error:', error);
+    throw error;
+  }
+};
+
+export const getMarket = async (marketId) => {
+  try {
+    const provider = getProvider();
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, provider);
+    const market = await contract.markets(marketId);
+    return market;
+  } catch (error) {
+    console.error('Get market error:', error);
+    throw error;
+  }
+};
+
+export const withdrawClaim = async () => {
+  try {
+    const signer = await getSigner();
+    const contract = getContract(signer);
+    const tx = await contract.withdrawClaim();
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error('Withdraw claim error:', error);
+    throw error;
+  }
+};
+
+export const getClaimable = async (address) => {
+  try {
+    if (!address) {
+      console.warn('[getClaimable] No address provided');
+      return '0';
+    }
+    
+    const provider = getProvider();
+    if (!provider) {
+      console.error('[getClaimable] No provider available');
+      return '0';
+    }
+    
+    console.log('[getClaimable] Fetching claimable for:', address);
+    console.log('[getClaimable] Contract address:', CONTRACT_ADDRESS);
+    
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, provider);
+    const claimable = await contract.claimable(address);
+    const formatted = ethers.utils.formatEther(claimable);
+    
+    console.log('[getClaimable] Claimable amount:', formatted, 'AION');
+    return formatted;
+  } catch (error) {
+    console.error('[getClaimable] Error:', error.message);
+    console.error('[getClaimable] Full error:', error);
+    return '0';
+  }
+};
+
+export const getAIONBalance = async (address) => {
+  try {
+    if (!address) {
+      console.warn('[getAIONBalance] No address provided');
+      return '0';
+    }
+    
+    const provider = getProvider();
+    if (!provider) {
+      console.error('[getAIONBalance] No provider available');
+      return '0';
+    }
+    
+    console.log('[getAIONBalance] Fetching balance for:', address);
+    console.log('[getAIONBalance] Token address:', AION_TOKEN_ADDRESS);
+    
+    const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, provider);
+    const balance = await tokenContract.balanceOf(address);
+    const formatted = ethers.utils.formatEther(balance);
+    
+    console.log('[getAIONBalance] Balance:', formatted, 'AION');
+    return formatted;
+  } catch (error) {
+    console.error('[getAIONBalance] Error:', error.message);
+    console.error('[getAIONBalance] Full error:', error);
+    return '0';
+  }
+};
+
+export const getBattleHistory = async (userAddress) => {
+  try {
+    const provider = getProvider();
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, provider);
+    const marketCount = await contract.marketCount();
+    const history = [];
+    
+    // Only check recent 100 markets for performance
+    const startMarket = Math.max(1, marketCount.toNumber() - 100);
+
+    for (let marketId = startMarket; marketId <= marketCount.toNumber(); marketId++) {
+      const betsCount = await contract.getMarketBetsCount(marketId);
+      for (let i = 0; i < betsCount.toNumber(); i++) {
+        const bet = await contract.bets(marketId, i);
+        if (bet.bettor.toLowerCase() === userAddress.toLowerCase()) {
+          const market = await contract.markets(marketId);
+          const isResolved = market.status === 2;
+          const isWinner = isResolved && bet.outcome === market.winningOutcome.toNumber();
+          
+          history.push({
+            marketId,
+            title: market.title,
+            mode: market.mode,
+            outcome: bet.outcome,
+            amount: ethers.utils.formatEther(bet.amount),
+            status: market.status,
+            isResolved,
+            isWinner,
+            timestamp: market.closeTime.toNumber()
+          });
+        }
+      }
+    }
+    return history.reverse();
+  } catch (error) {
+    console.error('Get battle history error:', error);
+    return [];
+  }
+};
+
+export const getOpenMarkets = async () => {
+  try {
+    const provider = getProvider();
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, PredictionMarketABI.abi, provider);
+    const marketCount = await contract.marketCount();
+    const openMarkets = [];
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Check last 100 markets for performance
+    const startMarket = Math.max(1, marketCount.toNumber() - 100);
+    
+    for (let i = startMarket; i <= marketCount.toNumber(); i++) {
+      const market = await contract.markets(i);
+      // Status 0 = OPEN, closeTime > now
+      if (market.status === 0 && market.closeTime.toNumber() > now) {
+        openMarkets.push({
+          id: i,
+          title: market.title,
+          closeTime: market.closeTime.toNumber(),
+          mode: market.mode,
+          totalStaked: ethers.utils.formatEther(market.totalStaked)
+        });
+      }
+    }
+    return openMarkets;
+  } catch (error) {
+    console.error('Get open markets error:', error);
+    return [];
+  }
+};
+
+export { CONTRACT_ADDRESS, AION_TOKEN_ADDRESS };

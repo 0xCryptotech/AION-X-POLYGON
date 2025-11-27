@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const PREDICTION_MARKET_ADDRESS = "0x276c2de4D162875be9C9DF96f68dD80Be54E2838";
+  const PREDICTION_MARKET_ADDRESS = process.env.CONTRACT_ADDRESS || "0x2C3B12e01313A8336179c5c850d64335137FAbab";
   
   const [deployer] = await ethers.getSigners();
   console.log("Creating 10-minute markets...");
