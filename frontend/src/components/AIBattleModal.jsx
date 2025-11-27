@@ -185,6 +185,19 @@ function FullscreenBattleModal({ onClose }) {
     if (!selectedBet) return alert("Pilih model AI untuk bertaruh terlebih dahulu.");
     
     try {
+      // Check network first
+      const provider = await window.ethereum;
+      if (provider) {
+        const chainId = await provider.request({ method: 'eth_chainId' });
+        const currentChainId = parseInt(chainId, 16);
+        const expectedChainId = parseInt(import.meta.env.VITE_CHAIN_ID || '80002');
+        
+        if (currentChainId !== expectedChainId) {
+          alert(`Wrong network! Please switch to Polygon Amoy Testnet.\n\nCurrent: Chain ID ${currentChainId}\nExpected: Chain ID ${expectedChainId}`);
+          return;
+        }
+      }
+      
       const timeframeSeconds = 600;
       
       if (!selectedMarket) {
@@ -317,7 +330,14 @@ function FullscreenBattleModal({ onClose }) {
     <div className="fixed inset-0 z-50 bg-slate-900/95 flex items-center justify-center p-6">
       <div className="w-full max-w-5xl bg-slate-800/80 border border-slate-700 rounded-2xl shadow-2xl p-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">AI vs AI Battle Arena</h3>
+          <div>
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">AI vs AI Battle Arena</h3>
+            {isConnected && (
+              <div className="text-xs text-slate-400 mt-1">
+                Network: Polygon Amoy Testnet (Chain ID: 80002)
+              </div>
+            )}
+          </div>
           <Button onClick={onClose} variant="outline">✕ Close</Button>
         </div>
 

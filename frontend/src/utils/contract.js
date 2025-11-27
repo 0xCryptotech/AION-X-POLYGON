@@ -16,11 +16,18 @@ export const getProvider = () => {
   return null;
 };
 
-// Get a reliable provider for read-only operations
+// Get a reliable provider for read-only operations with fallback
 export const getReadOnlyProvider = () => {
-  // Use Alchemy RPC for better reliability
-  const rpcUrl = import.meta.env.VITE_RPC_URL || 'https://polygon-amoy.g.alchemy.com/v2/TnBudoktgrSgm-wy0RkEg';
-  return new ethers.providers.JsonRpcProvider(rpcUrl);
+  // Try primary RPC first, then fallback
+  const primaryRpc = import.meta.env.VITE_RPC_URL || 'https://rpc-amoy.polygon.technology/';
+  const fallbackRpc = import.meta.env.VITE_FALLBACK_RPC || 'https://polygon-amoy.g.alchemy.com/v2/TnBudoktgrSgm-wy0RkEg';
+  
+  try {
+    return new ethers.providers.JsonRpcProvider(primaryRpc);
+  } catch (error) {
+    console.warn('[getReadOnlyProvider] Primary RPC failed, using fallback');
+    return new ethers.providers.JsonRpcProvider(fallbackRpc);
+  }
 };
 
 export const getSigner = async () => {
@@ -50,6 +57,18 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
     const signer = await getSigner();
     if (!signer) throw new Error('Please connect your wallet');
     
+    const provider = getProvider();
+    const network = await provider.getNetwork();
+    const expectedChainId = parseInt(import.meta.env.VITE_CHAIN_ID || '80002');
+    
+    console.log('[placeBet] Current network:', network.chainId);
+    console.log('[placeBet] Expected network:', expectedChainId);
+    
+    // Validate network
+    if (network.chainId !== expectedChainId) {
+      throw new Error(`Wrong network! Please switch to Polygon Amoy Testnet (Chain ID: ${expectedChainId})`);
+    }
+    
     const userAddress = await signer.getAddress();
     console.log('[placeBet] User address:', userAddress);
     
@@ -60,12 +79,22 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
     console.log('[placeBet] Checking balance with read-only provider...');
     onProgress?.('Checking balance...');
     
-    const readOnlyProvider = getReadOnlyProvider();
-    console.log('[placeBet] Read-only provider URL:', readOnlyProvider.connection.url);
+    let balance;
+    try {
+      const readOnlyProvider = getReadOnlyProvider();
+      console.log('[placeBet] Read-only provider URL:', readOnlyProvider.connection.url);
+      
+      const readOnlyTokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, readOnlyProvider);
+      balance = await readOnlyTokenContract.balanceOf(userAddress);
+      console.log('[placeBet] Balance:', ethers.utils.formatEther(balance), 'AION');
+    } catch (balanceError) {
+      console.warn('[placeBet] Read-only provider failed, trying with signer provider');
+      // Fallback to signer's provider
+      const tokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, provider);
+      balance = await tokenContract.balanceOf(userAddress);
+      console.log('[placeBet] Balance (fallback):', ethers.utils.formatEther(balance), 'AION');
+    }
     
-    const readOnlyTokenContract = new ethers.Contract(AION_TOKEN_ADDRESS, AIONTokenABI.abi, readOnlyProvider);
-    const balance = await readOnlyTokenContract.balanceOf(userAddress);
-    console.log('[placeBet] Balance:', ethers.utils.formatEther(balance), 'AION');
     if (balance.lt(amountWei)) {
       throw new Error(`Insufficient AION balance. Need ${amount} AION, have ${ethers.utils.formatEther(balance)} AION`);
     }
@@ -77,7 +106,6 @@ export const placeBet = async (marketId, outcome, amount, onProgress) => {
     const contract = getContract(signer);
     
     // Get current gas price and add 20% buffer for faster confirmation
-    const provider = getProvider();
     const gasPrice = await provider.getGasPrice();
     const boostedGasPrice = gasPrice.mul(120).div(100); // 20% boost
     console.log('[placeBet] Gas price:', ethers.utils.formatUnits(gasPrice, 'gwei'), 'gwei');
